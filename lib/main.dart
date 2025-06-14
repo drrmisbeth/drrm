@@ -1,9 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'firebase_options.dart';
+import 'user_role.dart';
 import 'app_shell.dart';
 
-enum UserRole { school, admin }
-
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   runApp(const MyApp());
 }
 
@@ -46,26 +53,58 @@ class _LoginScreenState extends State<LoginScreen> {
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
   String? _error;
+  bool _loading = false;
 
-  void _login() {
-    final username = _usernameController.text.trim();
+  Future<void> _login() async {
+    final email = _usernameController.text.trim();
     final password = _passwordController.text;
-    UserRole? role;
-    if (username == 'admin' && password == 'adminpass') {
-      role = UserRole.admin;
-    } else if (username == 'school' && password == 'schoolpass') {
-      role = UserRole.school;
-    } else {
+    setState(() {
+      _error = null;
+      _loading = true;
+    });
+    try {
+      // Sign in with Firebase Auth
+      final credential = await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+      // Fetch user role from Firestore
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(credential.user!.uid)
+          .get();
+      if (!userDoc.exists || userDoc.data()?['role'] == null) {
+        setState(() {
+          _error = 'User role not found.';
+          _loading = false;
+        });
+        return;
+      }
+      final String roleStr = userDoc.data()!['role'];
+      UserRole? role;
+      if (roleStr == 'admin') {
+        role = UserRole.admin;
+      } else if (roleStr == 'school') {
+        role = UserRole.school;
+      }
       if (!mounted) return;
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => AppShell(role: role!)),
+      );
+    } on FirebaseAuthException catch (e) {
       setState(() {
-        _error = 'Invalid username or password';
+        _error = e.message ?? 'Login failed';
+        _loading = false;
       });
-      return;
+    } catch (e) {
+      setState(() {
+        _error = 'Login failed';
+        _loading = false;
+      });
     }
-    if (!mounted) return;
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (_) => AppShell(role: role!)),
-    );
+    setState(() {
+      _loading = false;
+    });
   }
 
   @override
@@ -120,10 +159,10 @@ class _LoginScreenState extends State<LoginScreen> {
                       TextFormField(
                         controller: _usernameController,
                         decoration: InputDecoration(
-                          labelText: 'Username',
+                          labelText: 'Email',
                           prefixIcon: Icon(Icons.person),
                         ),
-                        validator: (v) => v == null || v.isEmpty ? 'Enter username' : null,
+                        validator: (v) => v == null || v.isEmpty ? 'Enter email' : null,
                       ),
                       const SizedBox(height: 20),
                       TextFormField(
@@ -151,12 +190,23 @@ class _LoginScreenState extends State<LoginScreen> {
                             textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
                             elevation: 2,
                           ),
-                          onPressed: () {
-                            if (_formKey.currentState?.validate() ?? false) {
-                              _login();
-                            }
-                          },
-                          child: Text('Login'),
+                          onPressed: _loading
+                              ? null
+                              : () {
+                                  if (_formKey.currentState?.validate() ?? false) {
+                                    _login();
+                                  }
+                                },
+                          child: _loading
+                              ? SizedBox(
+                                  width: 22,
+                                  height: 22,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2.5,
+                                  ),
+                                )
+                              : Text('Login'),
                         ),
                       ),
                     ],
@@ -164,6 +214,12 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
           ),
         ),
       ),

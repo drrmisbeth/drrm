@@ -9,7 +9,7 @@ import 'pages/admin_announcements.dart';
 import 'pages/admin_tasks_manager.dart';
 import 'pages/admin_all_submissions.dart';
 import 'pages/admin_exports.dart';
-import 'main.dart'; // Add this import
+import 'user_role.dart'; // Use the shared UserRole enum
 
 class AppShell extends StatefulWidget {
   final UserRole role;

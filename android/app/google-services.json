@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "995406752835",
+    "project_id": "drrmis-aeddc",
+    "storage_bucket": "drrmis-aeddc.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:995406752835:android:626e8a3736c54626f838f6",
+        "android_client_info": {
+          "package_name": "com.example.drrm"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "995406752835-4i1s2aa5cgv4to1etaqplihgeupk2ipc.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB_Ks407ljr2SttK3KI_rtP4t7YWxkO9aI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "995406752835-4i1s2aa5cgv4to1etaqplihgeupk2ipc.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "995406752835-q83afdifcb8rjhb7ge2jkrhkna2voqpg.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.drrm"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
