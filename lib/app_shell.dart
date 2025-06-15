@@ -277,21 +277,23 @@ class _AppShellState extends State<AppShell> {
             child: SingleChildScrollView(
               child: Padding(
                 padding: EdgeInsets.only(
-                  top: isMobile ? 18 : 40,
-                  left: isMobile ? 6 : 18,
-                  right: isMobile ? 6 : 18,
-                  bottom: isMobile ? 10 : 18,
+                  top: isMobile ? 12 : 32,
+                  left: isMobile ? 4 : 16,
+                  right: isMobile ? 4 : 16,
+                  bottom: isMobile ? 8 : 16,
                 ),
                 child: ConstrainedBox(
-                  constraints: BoxConstraints(maxWidth: isMobile ? 600 : 1100),
+                  constraints: BoxConstraints(
+                    maxWidth: isMobile ? double.infinity : 2000,
+                  ),
                   child: Card(
                     elevation: 4,
                     margin: EdgeInsets.zero,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
                     child: Padding(
                       padding: EdgeInsets.symmetric(
-                        vertical: isMobile ? 18 : 36,
-                        horizontal: isMobile ? 10 : 36,
+                        vertical: isMobile ? 12 : 32,
+                        horizontal: isMobile ? 6 : 32,
                       ),
                       child: pages[_selectedIndex],
                     ),

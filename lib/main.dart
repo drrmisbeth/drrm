@@ -3,7 +3,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'firebase_options.dart';
-import 'user_role.dart';
+import 'user_role.dart' as user_role;
 import 'app_shell.dart';
 
 void main() async {
@@ -81,11 +81,11 @@ class _LoginScreenState extends State<LoginScreen> {
         return;
       }
       final String roleStr = userDoc.data()!['role'];
-      UserRole? role;
+      user_role.UserRole? role;
       if (roleStr == 'admin') {
-        role = UserRole.admin;
+        role = user_role.UserRole.admin;
       } else if (roleStr == 'school') {
-        role = UserRole.school;
+        role = user_role.UserRole.school;
       }
       if (!mounted) return;
       Navigator.of(context).pushReplacement(
@@ -112,114 +112,148 @@ class _LoginScreenState extends State<LoginScreen> {
     final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
       body: Container(
-        decoration: BoxDecoration(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [
-              colorScheme.primary.withOpacity(0.13),
-              colorScheme.secondary.withOpacity(0.10),
-              Colors.white,
-            ],
+            colors: [Color(0xFFF3F1FA), Color(0xFFE7E5F3), Color(0xFFFDFDFE)],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
         ),
         child: Center(
-          child: Card(
-            elevation: 6,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 36),
-              child: ConstrainedBox(
-                constraints: BoxConstraints(maxWidth: 360),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          gradient: LinearGradient(
-                            colors: [
-                              colorScheme.primary.withOpacity(0.18),
-                              colorScheme.secondary.withOpacity(0.12),
-                            ],
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 420),
+            child: Card(
+              elevation: 12,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(32),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 36),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: colorScheme.primary.withOpacity(0.13),
+                        boxShadow: [
+                          BoxShadow(
+                            color: colorScheme.primary.withOpacity(0.10),
+                            blurRadius: 24,
+                            offset: const Offset(0, 8),
                           ),
-                        ),
-                        padding: const EdgeInsets.all(18),
-                        child: Icon(Icons.shield, color: colorScheme.primary, size: 54),
+                        ],
                       ),
-                      const SizedBox(height: 16),
-                      Text('DRRMIS Login',
-                          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: 1.2,
-                              )),
-                      const SizedBox(height: 32),
-                      TextFormField(
-                        controller: _usernameController,
-                        decoration: InputDecoration(
-                          labelText: 'Email',
-                          prefixIcon: Icon(Icons.person),
-                        ),
-                        validator: (v) => v == null || v.isEmpty ? 'Enter email' : null,
+                      padding: const EdgeInsets.all(28),
+                      child: Icon(Icons.shield, color: colorScheme.primary, size: 48),
+                    ),
+                    const SizedBox(height: 24),
+                    Text(
+                      'Welcome to DRRMIS',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 24,
+                        color: colorScheme.primary,
+                        letterSpacing: 1.1,
                       ),
-                      const SizedBox(height: 20),
-                      TextFormField(
-                        controller: _passwordController,
-                        obscureText: true,
-                        decoration: InputDecoration(
-                          labelText: 'Password',
-                          prefixIcon: Icon(Icons.lock),
-                        ),
-                        validator: (v) => v == null || v.isEmpty ? 'Enter password' : null,
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Disaster Risk Reduction & Management Information System',
+                      style: TextStyle(
+                        color: Colors.grey[700],
+                        fontSize: 14,
+                        letterSpacing: 0.2,
                       ),
-                      if (_error != null) ...[
-                        const SizedBox(height: 16),
-                        Text(_error!, style: TextStyle(color: Colors.red)),
-                      ],
-                      const SizedBox(height: 32),
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            shape: StadiumBorder(),
-                            backgroundColor: colorScheme.primary,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 18),
-                            textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
-                            elevation: 2,
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 32),
+                    Form(
+                      key: _formKey,
+                      child: Column(
+                        children: [
+                          TextFormField(
+                            controller: _usernameController,
+                            decoration: InputDecoration(
+                              labelText: 'Username',
+                              prefixIcon: Icon(Icons.person),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              contentPadding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
+                            ),
+                            validator: (v) => v == null || v.isEmpty ? 'Enter username' : null,
                           ),
-                          onPressed: _loading
-                              ? null
-                              : () {
-                                  if (_formKey.currentState?.validate() ?? false) {
-                                    _login();
-                                  }
-                                },
-                          child: _loading
-                              ? SizedBox(
-                                  width: 22,
-                                  height: 22,
-                                  child: CircularProgressIndicator(
-                                    color: Colors.white,
-                                    strokeWidth: 2.5,
-                                  ),
-                                )
-                              : Text('Login'),
-                        ),
+                          const SizedBox(height: 18),
+                          TextFormField(
+                            controller: _passwordController,
+                            obscureText: true,
+                            decoration: InputDecoration(
+                              labelText: 'Password',
+                              prefixIcon: Icon(Icons.lock),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              contentPadding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
+                            ),
+                            validator: (v) => v == null || v.isEmpty ? 'Enter password' : null,
+                          ),
+                          if (_error != null) ...[
+                            const SizedBox(height: 16),
+                            Text(_error!, style: const TextStyle(color: Colors.red)),
+                          ],
+                          const SizedBox(height: 28),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: colorScheme.primary,
+                                foregroundColor: Colors.white,
+                                shape: StadiumBorder(),
+                                padding: const EdgeInsets.symmetric(vertical: 18),
+                                textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                                elevation: 2,
+                              ),
+                              onPressed: _loading
+                                  ? null
+                                  : () {
+                                      if (_formKey.currentState?.validate() ?? false) {
+                                        _login();
+                                      }
+                                    },
+                              child: _loading
+                                  ? const SizedBox(
+                                      width: 22,
+                                      height: 22,
+                                      child: CircularProgressIndicator(
+                                        color: Colors.white,
+                                        strokeWidth: 2.5,
+                                      ),
+                                    )
+                                  : const Text('Login'),
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(height: 18),
+                    TextButton(
+                      onPressed: () {
+                        // TODO: Implement registration navigation
+                      },
+                      style: TextButton.styleFrom(
+                        foregroundColor: colorScheme.primary,
+                        textStyle: const TextStyle(fontSize: 15),
+                      ),
+                      child: const Text('No account? Register'),
+                    ),
+                  ],
                 ),
               ),
             ),
-          ),
-        ),
-      ),
-    );
-  }
-}
           ),
         ),
       ),

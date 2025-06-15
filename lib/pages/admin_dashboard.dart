@@ -6,119 +6,434 @@ class AdminDashboardPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final statCards = [
-      _statCard(
-        context,
-        'Schools',
-        '120',
-        Icons.school,
-        Colors.indigo,
-        [Color(0xFF7F7FD5), Color(0xFF86A8E7)],
-      ),
-      _statCard(
-        context,
-        'Submitted',
-        '80',
-        Icons.check_circle,
-        Colors.green,
-        [Color(0xFF43E97B), Color(0xFF38F9D7)],
-      ),
-      _statCard(
-        context,
-        'Pending',
-        '40',
-        Icons.pending_actions,
-        Colors.orange,
-        [Color(0xFFFFB75E), Color(0xFFED8F03)],
-      ),
-    ];
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Dashboard',
-          style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-                letterSpacing: 1.1,
-                color: colorScheme.primary,
-              ),
-        ),
-        const SizedBox(height: 32),
-        // Responsive stat cards using Wrap
-        Wrap(
-          spacing: 28,
-          runSpacing: 28,
-          children: statCards,
-        ),
-        const SizedBox(height: 44),
-        Text(
-          'Quick Links',
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w700,
-                letterSpacing: 0.7,
-                color: colorScheme.secondary,
-              ),
-        ),
-        const SizedBox(height: 18),
-        Wrap(
-          spacing: 24,
-          children: [
-            _quickLink(context, Icons.assignment, 'Submission Tasks', colorScheme.primary),
-            _quickLink(context, Icons.list_alt, 'All Submissions', colorScheme.secondary),
-          ],
-        ),
-      ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isMobile = constraints.maxWidth < 900;
+        return Padding(
+          padding: const EdgeInsets.only(top: 8.0),
+          child: isMobile
+              ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Dashboard',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 28,
+                        color: Color(0xFF7C6CB2),
+                        letterSpacing: 1.1,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    // Stat cards in column
+                    _statCard(
+                      color: const Color(0xFF7C8CD2),
+                      icon: Icons.school,
+                      value: '120',
+                      label: 'Schools',
+                    ),
+                    const SizedBox(height: 16),
+                    _statCard(
+                      color: const Color(0xFF3FE9B3),
+                      icon: Icons.check_circle,
+                      value: '80',
+                      label: 'Submitted',
+                      iconColor: Colors.white,
+                      gradient: const [
+                        Color(0xFF43E97B),
+                        Color(0xFF38F9D7),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    _statCard(
+                      color: const Color(0xFFFFB75E),
+                      icon: Icons.camera_alt_rounded,
+                      value: '40',
+                      label: 'Pending',
+                      iconColor: Colors.white,
+                      gradient: const [
+                        Color(0xFFFFB75E),
+                        Color(0xFFED8F03),
+                      ],
+                    ),
+                    const SizedBox(height: 28),
+                    Text(
+                      'Quick Links',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 18,
+                        color: Color(0xFF7C6CB2),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    _quickLink(
+                      icon: Icons.assignment_rounded,
+                      label: 'Submission Tasks',
+                      color: const Color(0xFF7C6CB2),
+                    ),
+                    const SizedBox(height: 10),
+                    _quickLink(
+                      icon: Icons.list_alt_rounded,
+                      label: 'All Submissions',
+                      color: const Color(0xFF7C6CB2),
+                    ),
+                    const SizedBox(height: 24),
+                    _infoCard(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 24),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(Icons.event_note, color: Color(0xFF7C6CB2)),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Upcoming Drills',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 17,
+                                    color: Color(0xFF7C6CB2),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Text('• Earthquake Drill: June 15, 2024',
+                                style: TextStyle(fontSize: 15, color: Colors.black87)),
+                            Text('• Earthquake Drill: September 15, 2024',
+                                style: TextStyle(fontSize: 15, color: Colors.black87)),
+                          ],
+                        ),
+                      ),
+                    ),
+                    _infoCard(
+                      color: const Color(0xFFF8F3FB),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 24),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Recent Activity',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 17,
+                                color: Color(0xFF7C6CB2),
+                              ),
+                            ),
+                            const SizedBox(height: 18),
+                            _activityRow(
+                              icon: Icons.check_circle,
+                              iconColor: Color(0xFF3FE9B3),
+                              text: 'School A submitted Earthquake Drill report',
+                              date: 'June 8, 2024',
+                            ),
+                            _activityRow(
+                              icon: Icons.pending_actions,
+                              iconColor: Color(0xFFFFB75E),
+                              text: 'School B pending Earthquake Drill report',
+                              date: 'June 7, 2024',
+                            ),
+                            _activityRow(
+                              icon: Icons.check_circle,
+                              iconColor: Color(0xFF3FE9B3),
+                              text: 'School C submitted Earthquake Drill report',
+                              date: 'June 6, 2024',
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    _infoCard(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 24),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(Icons.assignment, color: Color(0xFF7C6CB2)),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Active Drill Tasks',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                    color: Color(0xFF7C6CB2),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Earthquake Drill (Quarterly)',
+                              style: TextStyle(fontSize: 15, color: Colors.black87),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                )
+              : Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Left: Dashboard stats and quick links
+                    Expanded(
+                      flex: 2,
+                      child: Padding(
+                        padding: const EdgeInsets.only(right: 24.0, left: 8.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Dashboard',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 28,
+                                color: Color(0xFF7C6CB2),
+                                letterSpacing: 1.1,
+                              ),
+                            ),
+                            const SizedBox(height: 32),
+                            Row(
+                              children: [
+                                _statCard(
+                                  color: const Color(0xFF7C8CD2),
+                                  icon: Icons.school,
+                                  value: '120',
+                                  label: 'Schools',
+                                ),
+                                const SizedBox(width: 24),
+                                _statCard(
+                                  color: const Color(0xFF3FE9B3),
+                                  icon: Icons.check_circle,
+                                  value: '80',
+                                  label: 'Submitted',
+                                  iconColor: Colors.white,
+                                  gradient: const [
+                                    Color(0xFF43E97B),
+                                    Color(0xFF38F9D7),
+                                  ],
+                                ),
+                                const SizedBox(width: 24),
+                                _statCard(
+                                  color: const Color(0xFFFFB75E),
+                                  icon: Icons.camera_alt_rounded,
+                                  value: '40',
+                                  label: 'Pending',
+                                  iconColor: Colors.white,
+                                  gradient: const [
+                                    Color(0xFFFFB75E),
+                                    Color(0xFFED8F03),
+                                  ],
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 40),
+                            Text(
+                              'Quick Links',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 18,
+                                color: Color(0xFF7C6CB2),
+                              ),
+                            ),
+                            const SizedBox(height: 18),
+                            Row(
+                              children: [
+                                _quickLink(
+                                  icon: Icons.assignment_rounded,
+                                  label: 'Submission Tasks',
+                                  color: const Color(0xFF7C6CB2),
+                                ),
+                                const SizedBox(width: 18),
+                                _quickLink(
+                                  icon: Icons.list_alt_rounded,
+                                  label: 'All Submissions',
+                                  color: const Color(0xFF7C6CB2),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    // Right: Upcoming Drills, Recent Activity, Active Drill Tasks
+                    Expanded(
+                      flex: 3,
+                      child: Column(
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _infoCard(
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 24),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            Icon(Icons.event_note, color: Color(0xFF7C6CB2)),
+                                            const SizedBox(width: 8),
+                                            Text(
+                                              'Upcoming Drills',
+                                              style: TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 17,
+                                                color: Color(0xFF7C6CB2),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 8),
+                                        Text('• Earthquake Drill: June 15, 2024',
+                                            style: TextStyle(fontSize: 15, color: Colors.black87)),
+                                        Text('• Earthquake Drill: September 15, 2024',
+                                            style: TextStyle(fontSize: 15, color: Colors.black87)),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 22),
+                          _infoCard(
+                            color: const Color(0xFFF8F3FB),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 24),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Recent Activity',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 17,
+                                      color: Color(0xFF7C6CB2),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 18),
+                                  _activityRow(
+                                    icon: Icons.check_circle,
+                                    iconColor: Color(0xFF3FE9B3),
+                                    text: 'School A submitted Earthquake Drill report',
+                                    date: 'June 8, 2024',
+                                  ),
+                                  _activityRow(
+                                    icon: Icons.pending_actions,
+                                    iconColor: Color(0xFFFFB75E),
+                                    text: 'School B pending Earthquake Drill report',
+                                    date: 'June 7, 2024',
+                                  ),
+                                  _activityRow(
+                                    icon: Icons.check_circle,
+                                    iconColor: Color(0xFF3FE9B3),
+                                    text: 'School C submitted Earthquake Drill report',
+                                    date: 'June 6, 2024',
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 22),
+                          _infoCard(
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 24),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Icon(Icons.assignment, color: Color(0xFF7C6CB2)),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        'Active Drill Tasks',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 16,
+                                          color: Color(0xFF7C6CB2),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    'Earthquake Drill (Quarterly)',
+                                    style: TextStyle(fontSize: 15, color: Colors.black87),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+        );
+      },
     );
   }
 
-  // Modern stat card with gradient background and shadow
-  Widget _statCard(BuildContext context, String label, String value, IconData icon, Color iconColor, List<Color> gradientColors) {
+  Widget _statCard({
+    required Color color,
+    required IconData icon,
+    required String value,
+    required String label,
+    Color iconColor = Colors.white,
+    List<Color>? gradient,
+  }) {
     return Container(
-      width: 220,
-      height: 120,
+      width: 200,
+      height: 110,
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: gradientColors,
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(20),
+        color: gradient == null ? color : null,
+        gradient: gradient != null
+            ? LinearGradient(
+                colors: gradient,
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              )
+            : null,
+        borderRadius: BorderRadius.circular(22),
         boxShadow: [
           BoxShadow(
-            color: gradientColors.last.withOpacity(0.18),
-            blurRadius: 16,
-            offset: Offset(0, 8),
+            color: (gradient != null ? gradient.last : color).withOpacity(0.15),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(22),
+        padding: const EdgeInsets.all(18),
         child: Row(
           children: [
             CircleAvatar(
               backgroundColor: Colors.white.withOpacity(0.18),
-              child: Icon(icon, color: iconColor, size: 34),
+              child: Icon(icon, color: iconColor, size: 32),
               radius: 28,
             ),
-            const SizedBox(width: 18),
+            const SizedBox(width: 16),
             Column(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   value,
-                  style: TextStyle(
-                    fontSize: 32,
+                  style: const TextStyle(
+                    fontSize: 30,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
-                    shadows: [Shadow(color: Colors.black26, blurRadius: 2)],
                   ),
                 ),
                 Text(
                   label,
                   style: TextStyle(
-                    fontSize: 16,
+                    fontSize: 15,
                     color: Colors.white.withOpacity(0.92),
                     fontWeight: FontWeight.w500,
                   ),
@@ -131,21 +446,70 @@ class AdminDashboardPage extends StatelessWidget {
     );
   }
 
-  // Modern quick link button with custom color
-  Widget _quickLink(BuildContext context, IconData icon, String label, Color color) {
+  Widget _quickLink({
+    required IconData icon,
+    required String label,
+    required Color color,
+  }) {
     return ElevatedButton.icon(
       style: ElevatedButton.styleFrom(
-        elevation: 2,
+        elevation: 0,
         backgroundColor: color.withOpacity(0.13),
         foregroundColor: color,
-        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 18),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 17),
-        shadowColor: color.withOpacity(0.18),
+        padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
+        shape: StadiumBorder(),
+        textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+        shadowColor: Colors.transparent,
       ),
       onPressed: () {},
-      icon: Icon(icon, size: 24),
+      icon: Icon(icon, size: 22),
       label: Text(label),
+    );
+  }
+
+  Widget _infoCard({required Widget child, Color? color}) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 18),
+      decoration: BoxDecoration(
+        color: color ?? Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.13),
+            blurRadius: 16,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: child,
+    );
+  }
+
+  Widget _activityRow({
+    required IconData icon,
+    required Color iconColor,
+    required String text,
+    required String date,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10.0),
+      child: Row(
+        children: [
+          Icon(icon, color: iconColor, size: 22),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              text,
+              style: const TextStyle(fontSize: 15, color: Colors.black87),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Text(
+            date,
+            style: TextStyle(fontSize: 13, color: Colors.grey[700]),
+          ),
+        ],
+      ),
     );
   }
 }
