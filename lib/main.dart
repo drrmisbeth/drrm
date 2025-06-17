@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:supabase_flutter/supabase_flutter.dart'; // <-- Add this import
 import 'firebase_options.dart';
 import 'user_role.dart' as user_role;
 import 'app_shell.dart';
@@ -11,38 +12,114 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+  // Initialize Supabase
+  await Supabase.initialize(
+    url: 'https://ievsphgbaytnfwbjyykn.supabase.co',
+    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlldnNpaGdiYXl0bmZ3Ymp5eWtuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk2OTA5OTEsImV4cCI6MjA2NTI2Njk5MX0.g1WzqHj5Xtys3GZUpQBwBaeTN25RB3DGEZilQqNujIE',
+  );
   runApp(const MyApp());
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
 
   @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  bool _darkMode = false;
+
+  void _toggleDarkMode() {
+    setState(() {
+      _darkMode = !_darkMode;
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
+    // Modern color scheme
+    final Color orange = const Color(0xFFFF9800);
+    final Color yellow = const Color(0xFFFFEB3B);
+    final Color red = const Color(0xFFF44336);
+    final Color accent = const Color(0xFFFEF3E2);
+
+    final lightTheme = ThemeData(
+      colorScheme: ColorScheme(
+        brightness: Brightness.light,
+        primary: orange,
+        onPrimary: Colors.white,
+        secondary: yellow,
+        onSecondary: Colors.black,
+        error: red,
+        onError: Colors.white,
+        background: accent,
+        onBackground: Colors.black,
+        surface: Colors.white,
+        onSurface: Colors.black,
+      ),
+      useMaterial3: true,
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: Colors.white.withOpacity(0.97),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+      ),
+      cardTheme: CardTheme(
+        elevation: 5,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+        color: Colors.white.withOpacity(0.98),
+      ),
+      scaffoldBackgroundColor: accent,
+      fontFamily: 'Segoe UI',
+    );
+
+    final darkTheme = ThemeData(
+      colorScheme: ColorScheme(
+        brightness: Brightness.dark,
+        primary: orange,
+        onPrimary: Colors.black,
+        secondary: yellow,
+        onSecondary: Colors.black,
+        error: red,
+        onError: Colors.white,
+        background: Colors.grey[900]!,
+        onBackground: Colors.white,
+        surface: Colors.grey[850]!,
+        onSurface: Colors.white,
+      ),
+      useMaterial3: true,
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: Colors.grey[850],
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+      ),
+      cardTheme: CardTheme(
+        elevation: 5,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+        color: Colors.grey[900],
+      ),
+      scaffoldBackgroundColor: Colors.grey[900],
+      fontFamily: 'Segoe UI',
+    );
+
     return MaterialApp(
       title: 'DRRMIS',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
-        inputDecorationTheme: InputDecorationTheme(
-          filled: true,
-          fillColor: Colors.grey[50],
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-        ),
-        cardTheme: CardTheme(
-          elevation: 4,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        ),
-        scaffoldBackgroundColor: Colors.grey[100],
+      theme: lightTheme,
+      darkTheme: darkTheme,
+      themeMode: _darkMode ? ThemeMode.dark : ThemeMode.light,
+      home: LoginScreen(
+        onToggleDarkMode: _toggleDarkMode,
+        darkMode: _darkMode,
       ),
-      home: const LoginScreen(),
       debugShowCheckedModeBanner: false,
     );
   }
 }
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({Key? key}) : super(key: key);
+  final VoidCallback? onToggleDarkMode;
+  final bool darkMode;
+  const LoginScreen({Key? key, this.onToggleDarkMode, this.darkMode = false}) : super(key: key);
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -89,7 +166,13 @@ class _LoginScreenState extends State<LoginScreen> {
       }
       if (!mounted) return;
       Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => AppShell(role: role!)),
+        MaterialPageRoute(
+          builder: (_) => AppShell(
+            role: role!,
+            onToggleDarkMode: widget.onToggleDarkMode,
+            darkMode: widget.darkMode,
+          ),
+        ),
       );
     } on FirebaseAuthException catch (e) {
       setState(() {
@@ -114,13 +197,7 @@ class _LoginScreenState extends State<LoginScreen> {
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFFF3F1FA), Color(0xFFE7E5F3), Color(0xFFFDFDFE)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
+        color: Theme.of(context).scaffoldBackgroundColor,
         child: Center(
           child: Container(
             constraints: const BoxConstraints(maxWidth: 420),
@@ -250,6 +327,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       child: const Text('No account? Register'),
                     ),
+                    const SizedBox(height: 24),
                   ],
                 ),
               ),

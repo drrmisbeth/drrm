@@ -1,50 +1,100 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class SchoolAnnouncementsPage extends StatelessWidget {
-  const SchoolAnnouncementsPage({Key? key}) : super(key: key);
+  final VoidCallback? onToggleDarkMode;
+  final bool darkMode;
+  const SchoolAnnouncementsPage({Key? key, this.onToggleDarkMode, this.darkMode = false}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final isMobile = constraints.maxWidth < 700;
-        return Padding(
-          padding: EdgeInsets.all(isMobile ? 8 : 0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Announcements',
-                style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 1.1,
-                      fontSize: isMobile ? 22 : null,
-                    ),
+    return Container(
+      color: Theme.of(context).scaffoldBackgroundColor,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Announcements',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 30,
+                color: Colors.black,
+                letterSpacing: 1.2,
               ),
-              SizedBox(height: isMobile ? 16 : 28),
-              ...List.generate(3, (i) => Card(
-                elevation: 2,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                margin: EdgeInsets.only(bottom: isMobile ? 10 : 18),
-                child: ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: colorScheme.secondary.withOpacity(0.15),
-                    child: Icon(Icons.campaign, color: colorScheme.secondary, size: 26),
-                    radius: 24,
-                  ),
-                  title: Text(
-                    'Announcement Title $i',
-                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: isMobile ? 13 : 16),
-                  ),
-                  subtitle: Text('Short description for announcement $i.'),
-                  trailing: Text('June ${10 + i}', style: TextStyle(color: Colors.grey[600], fontSize: isMobile ? 12 : 14)),
-                ),
-              )),
-            ],
-          ),
-        );
-      },
+            ),
+            const SizedBox(height: 28),
+            SizedBox(
+              height: 500,
+              child: StreamBuilder<QuerySnapshot>(
+                stream: FirebaseFirestore.instance
+                    .collection('announcements')
+                    .orderBy('createdAt', descending: true)
+                    .snapshots(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                    return Card(
+                      elevation: 2,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                      child: ListTile(
+                        title: Text('No announcements yet.', style: TextStyle(color: Colors.grey[700])),
+                      ),
+                    );
+                  }
+                  final docs = snapshot.data!.docs;
+                  return ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: docs.length,
+                    itemBuilder: (context, i) {
+                      final data = docs[i].data() as Map<String, dynamic>;
+                      final createdAt = (data['createdAt'] as Timestamp?)?.toDate();
+                      return Card(
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+                        color: colorScheme.secondary.withOpacity(0.13),
+                        margin: const EdgeInsets.only(bottom: 18, left: 2, right: 2),
+                        child: ListTile(
+                          leading: CircleAvatar(
+                            backgroundColor: colorScheme.secondary,
+                            child: Icon(Icons.campaign, color: Colors.white, size: 28),
+                            radius: 26,
+                          ),
+                          title: Text(
+                            data['title'] ?? '',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 17,
+                              color: Colors.black,
+                            ),
+                          ),
+                          subtitle: Padding(
+                            padding: const EdgeInsets.only(top: 4),
+                            child: Text(
+                              data['description'] ?? '',
+                              style: const TextStyle(fontSize: 14, color: Colors.black87),
+                            ),
+                          ),
+                          trailing: Text(
+                            createdAt != null
+                                ? '${createdAt.month.toString().padLeft(2, '0')}/${createdAt.day.toString().padLeft(2, '0')}/${createdAt.year}'
+                                : '',
+                            style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                          ),
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

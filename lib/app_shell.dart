@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'pages/school_home.dart';
 import 'pages/school_announcements.dart';
 import 'pages/school_tasks.dart';
@@ -9,11 +10,14 @@ import 'pages/admin_announcements.dart';
 import 'pages/admin_tasks_manager.dart';
 import 'pages/admin_all_submissions.dart';
 import 'pages/admin_exports.dart';
+import 'main.dart';
 import 'user_role.dart'; // Use the shared UserRole enum
 
 class AppShell extends StatefulWidget {
   final UserRole role;
-  const AppShell({Key? key, required this.role}) : super(key: key);
+  final VoidCallback? onToggleDarkMode;
+  final bool darkMode;
+  const AppShell({Key? key, required this.role, this.onToggleDarkMode, this.darkMode = false}) : super(key: key);
 
   @override
   State<AppShell> createState() => _AppShellState();
@@ -22,12 +26,27 @@ class AppShell extends StatefulWidget {
 class _AppShellState extends State<AppShell> {
   int _selectedIndex = 0;
 
-  List<Widget> get _schoolPages => const [
-        SchoolHomePage(),
-        SchoolAnnouncementsPage(),
-        SchoolTasksPage(),
-        SchoolSubmitFormPage(),
-        SchoolMySubmissionsPage(),
+  List<Widget> get _schoolPages => [
+        SchoolHomePage(
+          onToggleDarkMode: widget.onToggleDarkMode,
+          darkMode: widget.darkMode,
+        ),
+        SchoolAnnouncementsPage(
+          onToggleDarkMode: widget.onToggleDarkMode,
+          darkMode: widget.darkMode,
+        ),
+        SchoolTasksPage(
+          onToggleDarkMode: widget.onToggleDarkMode,
+          darkMode: widget.darkMode,
+        ),
+        SchoolSubmitFormPage(
+          onToggleDarkMode: widget.onToggleDarkMode,
+          darkMode: widget.darkMode,
+        ),
+        SchoolMySubmissionsPage(
+          onToggleDarkMode: widget.onToggleDarkMode,
+          darkMode: widget.darkMode,
+        ),
       ];
 
   List<String> get _schoolNav => [
@@ -38,12 +57,27 @@ class _AppShellState extends State<AppShell> {
         'My Submissions',
       ];
 
-  List<Widget> get _adminPages => const [
-        AdminDashboardPage(),
-        AdminAnnouncementsPage(),
-        AdminTasksManagerPage(),
-        AdminAllSubmissionsPage(),
-        AdminExportsPage(),
+  List<Widget> get _adminPages => [
+        AdminDashboardPage(
+          onToggleDarkMode: widget.onToggleDarkMode,
+          darkMode: widget.darkMode,
+        ),
+        AdminAnnouncementsPage(
+          onToggleDarkMode: widget.onToggleDarkMode,
+          darkMode: widget.darkMode,
+        ),
+        AdminTasksManagerPage(
+          onToggleDarkMode: widget.onToggleDarkMode,
+          darkMode: widget.darkMode,
+        ),
+        AdminAllSubmissionsPage(
+          onToggleDarkMode: widget.onToggleDarkMode,
+          darkMode: widget.darkMode,
+        ),
+        AdminExportsPage(
+          onToggleDarkMode: widget.onToggleDarkMode,
+          darkMode: widget.darkMode,
+        ),
       ];
 
   List<String> get _adminNav => [
@@ -54,12 +88,27 @@ class _AppShellState extends State<AppShell> {
         'Exports',
       ];
 
+  void _logout() async {
+    await FirebaseAuth.instance.signOut();
+    if (mounted) {
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+        (route) => false,
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    // Custom color scheme
+    final Color orange = const Color(0xFFFF9800);
+    final Color yellow = const Color(0xFFFFEB3B);
+    final Color red = const Color(0xFFF44336);
+
     final isSchool = widget.role == UserRole.school;
     final navItems = isSchool ? _schoolNav : _adminNav;
     final pages = isSchool ? _schoolPages : _adminPages;
-    final colorScheme = Theme.of(context).colorScheme;
+    final isMobile = MediaQuery.of(context).size.width < 700;
 
     return Scaffold(
       extendBodyBehindAppBar: true,
@@ -69,24 +118,12 @@ class _AppShellState extends State<AppShell> {
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [
-                colorScheme.primary.withOpacity(0.95),
-                colorScheme.secondary.withOpacity(0.92),
+                Theme.of(context).colorScheme.primary.withOpacity(0.98),
+                Colors.deepOrange.shade700.withOpacity(0.98),
+                Colors.red.shade800.withOpacity(0.98),
               ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.08),
-                blurRadius: 18,
-                offset: Offset(0, 8),
-              ),
-            ],
-            border: Border(
-              bottom: BorderSide(
-                color: colorScheme.outline.withOpacity(0.13),
-                width: 1,
-              ),
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight,
             ),
           ),
           child: SafeArea(
@@ -104,8 +141,8 @@ class _AppShellState extends State<AppShell> {
                               shape: BoxShape.circle,
                               gradient: LinearGradient(
                                 colors: [
-                                  colorScheme.primary.withOpacity(0.22),
-                                  colorScheme.secondary.withOpacity(0.13),
+                                  orange.withOpacity(0.22),
+                                  yellow.withOpacity(0.13),
                                 ],
                               ),
                             ),
@@ -120,6 +157,12 @@ class _AppShellState extends State<AppShell> {
                               fontSize: 24,
                               color: Colors.white,
                               letterSpacing: 1.3,
+                              shadows: [
+                                Shadow(
+                                  color: Colors.black.withOpacity(0.08),
+                                  blurRadius: 4,
+                                ),
+                              ],
                             ),
                           ),
                         ],
@@ -129,14 +172,13 @@ class _AppShellState extends State<AppShell> {
                         ...List.generate(navItems.length, (i) {
                           final selected = _selectedIndex == i;
                           final menuColors = [
-                            Colors.deepPurple,
-                            Colors.indigo,
-                            Colors.teal,
-                            Colors.orange,
-                            Colors.pink,
-                            Colors.blue,
-                            Colors.green,
-                            Colors.red,
+                            orange,
+                            yellow,
+                            red,
+                            Colors.deepOrange,
+                            Colors.amber,
+                            Colors.deepOrangeAccent,
+                            Colors.orangeAccent,
                           ];
                           final menuColor = menuColors[i % menuColors.length];
                           return Padding(
@@ -144,10 +186,10 @@ class _AppShellState extends State<AppShell> {
                             child: MouseRegion(
                               cursor: SystemMouseCursors.click,
                               child: AnimatedContainer(
-                                duration: Duration(milliseconds: 180),
+                                duration: const Duration(milliseconds: 180),
                                 decoration: BoxDecoration(
                                   color: selected
-                                      ? menuColor.withOpacity(0.18)
+                                      ? menuColor.withOpacity(0.20)
                                       : Colors.transparent,
                                   borderRadius: BorderRadius.circular(22),
                                 ),
@@ -155,7 +197,7 @@ class _AppShellState extends State<AppShell> {
                                   style: TextButton.styleFrom(
                                     foregroundColor: selected
                                         ? menuColor
-                                        : Colors.white.withOpacity(0.90),
+                                        : Colors.white.withOpacity(0.92),
                                     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                                     textStyle: TextStyle(
                                       fontWeight: selected ? FontWeight.bold : FontWeight.w500,
@@ -189,7 +231,7 @@ class _AppShellState extends State<AppShell> {
                         }),
                       if (isMobile)
                         PopupMenuButton<int>(
-                          icon: Icon(Icons.menu, color: Colors.white),
+                          icon: const Icon(Icons.menu, color: Colors.white),
                           color: Colors.white,
                           onSelected: (i) {
                             setState(() {
@@ -204,7 +246,7 @@ class _AppShellState extends State<AppShell> {
                                   children: [
                                     Icon(
                                       _getMenuIcon(navItems[i], isSchool),
-                                      color: Colors.deepPurple,
+                                      color: orange,
                                       size: 20,
                                     ),
                                     const SizedBox(width: 8),
@@ -231,7 +273,7 @@ class _AppShellState extends State<AppShell> {
                             const SizedBox(width: 8),
                             Text(
                               isSchool ? 'School' : 'Admin',
-                              style: TextStyle(
+                              style: const TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.w600,
                                 fontSize: 17,
@@ -247,6 +289,12 @@ class _AppShellState extends State<AppShell> {
                                 tooltip: 'Profile',
                               ),
                             ),
+                            const SizedBox(width: 8),
+                            IconButton(
+                              icon: const Icon(Icons.logout, color: Colors.white),
+                              tooltip: 'Logout',
+                              onPressed: _logout,
+                            ),
                           ],
                         ),
                       ),
@@ -258,51 +306,37 @@ class _AppShellState extends State<AppShell> {
           ),
         ),
       ),
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          final isMobile = constraints.maxWidth < 700;
-          return Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  colorScheme.primary.withOpacity(0.07),
-                  colorScheme.secondary.withOpacity(0.05),
-                  Colors.white,
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
+      body: Container(
+        color: Theme.of(context).scaffoldBackgroundColor,
+        alignment: Alignment.topCenter,
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: EdgeInsets.only(
+              top: isMobile ? 12 : 32,
+              left: isMobile ? 4 : 16,
+              right: isMobile ? 4 : 16,
+              bottom: isMobile ? 8 : 16,
             ),
-            alignment: Alignment.topCenter,
-            child: SingleChildScrollView(
-              child: Padding(
-                padding: EdgeInsets.only(
-                  top: isMobile ? 12 : 32,
-                  left: isMobile ? 4 : 16,
-                  right: isMobile ? 4 : 16,
-                  bottom: isMobile ? 8 : 16,
-                ),
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(
-                    maxWidth: isMobile ? double.infinity : 2000,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: isMobile ? double.infinity : 2000,
+              ),
+              child: Card(
+                elevation: 5,
+                margin: EdgeInsets.zero,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+                color: Colors.white.withOpacity(0.98),
+                child: Padding(
+                  padding: EdgeInsets.symmetric(
+                    vertical: isMobile ? 12 : 32,
+                    horizontal: isMobile ? 6 : 32,
                   ),
-                  child: Card(
-                    elevation: 4,
-                    margin: EdgeInsets.zero,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(
-                        vertical: isMobile ? 12 : 32,
-                        horizontal: isMobile ? 6 : 32,
-                      ),
-                      child: pages[_selectedIndex],
-                    ),
-                  ),
+                  child: pages[_selectedIndex],
                 ),
               ),
             ),
-          );
-        },
+          ),
+        ),
       ),
     );
   }

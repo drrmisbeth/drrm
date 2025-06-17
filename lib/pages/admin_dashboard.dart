@@ -1,10 +1,18 @@
 import 'package:flutter/material.dart';
 
 class AdminDashboardPage extends StatelessWidget {
-  const AdminDashboardPage({Key? key}) : super(key: key);
+  final VoidCallback? onToggleDarkMode;
+  final bool darkMode;
+  const AdminDashboardPage({Key? key, this.onToggleDarkMode, this.darkMode = false}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    // Modern color scheme
+    final Color orange = const Color(0xFFFF9800);
+    final Color yellow = const Color(0xFFFFEB3B);
+    final Color red = const Color(0xFFF44336);
+    final Color accent = const Color(0xFFFEF3E2);
+
     final colorScheme = Theme.of(context).colorScheme;
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -20,40 +28,40 @@ class AdminDashboardPage extends StatelessWidget {
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 28,
-                        color: Color(0xFF7C6CB2),
+                        color: orange,
                         letterSpacing: 1.1,
                       ),
                     ),
                     const SizedBox(height: 24),
                     // Stat cards in column
                     _statCard(
-                      color: const Color(0xFF7C8CD2),
+                      color: orange,
                       icon: Icons.school,
                       value: '120',
                       label: 'Schools',
                     ),
                     const SizedBox(height: 16),
                     _statCard(
-                      color: const Color(0xFF3FE9B3),
+                      color: yellow,
                       icon: Icons.check_circle,
                       value: '80',
                       label: 'Submitted',
                       iconColor: Colors.white,
                       gradient: const [
-                        Color(0xFF43E97B),
-                        Color(0xFF38F9D7),
+                        Color(0xFFFFE082),
+                        Color(0xFFFFC107),
                       ],
                     ),
                     const SizedBox(height: 16),
                     _statCard(
-                      color: const Color(0xFFFFB75E),
+                      color: red,
                       icon: Icons.camera_alt_rounded,
                       value: '40',
                       label: 'Pending',
                       iconColor: Colors.white,
                       gradient: const [
-                        Color(0xFFFFB75E),
-                        Color(0xFFED8F03),
+                        Color(0xFFFF8A65),
+                        Color(0xFFF44336),
                       ],
                     ),
                     const SizedBox(height: 28),
@@ -192,7 +200,7 @@ class AdminDashboardPage extends StatelessWidget {
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 28,
-                                color: Color(0xFF7C6CB2),
+                                color: orange,
                                 letterSpacing: 1.1,
                               ),
                             ),
@@ -200,33 +208,33 @@ class AdminDashboardPage extends StatelessWidget {
                             Row(
                               children: [
                                 _statCard(
-                                  color: const Color(0xFF7C8CD2),
+                                  color: orange,
                                   icon: Icons.school,
                                   value: '120',
                                   label: 'Schools',
                                 ),
                                 const SizedBox(width: 24),
                                 _statCard(
-                                  color: const Color(0xFF3FE9B3),
+                                  color: yellow,
                                   icon: Icons.check_circle,
                                   value: '80',
                                   label: 'Submitted',
                                   iconColor: Colors.white,
                                   gradient: const [
-                                    Color(0xFF43E97B),
-                                    Color(0xFF38F9D7),
+                                    Color(0xFFFFE082),
+                                    Color(0xFFFFC107),
                                   ],
                                 ),
                                 const SizedBox(width: 24),
                                 _statCard(
-                                  color: const Color(0xFFFFB75E),
+                                  color: red,
                                   icon: Icons.camera_alt_rounded,
                                   value: '40',
                                   label: 'Pending',
                                   iconColor: Colors.white,
                                   gradient: const [
-                                    Color(0xFFFFB75E),
-                                    Color(0xFFED8F03),
+                                    Color(0xFFFF8A65),
+                                    Color(0xFFF44336),
                                   ],
                                 ),
                               ],
