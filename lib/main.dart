@@ -64,7 +64,7 @@ class _MyAppState extends State<MyApp> {
         fillColor: Colors.white.withOpacity(0.97),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
       ),
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         elevation: 5,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
         color: Colors.white.withOpacity(0.98),
@@ -93,7 +93,7 @@ class _MyAppState extends State<MyApp> {
         fillColor: Colors.grey[850],
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
       ),
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         elevation: 5,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
         color: Colors.grey[900],

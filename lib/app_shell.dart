@@ -111,233 +111,344 @@ class _AppShellState extends State<AppShell> {
     final isMobile = MediaQuery.of(context).size.width < 700;
 
     return Scaffold(
-      extendBodyBehindAppBar: true,
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(80),
-        child: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                Theme.of(context).colorScheme.primary.withOpacity(0.98),
-                Colors.deepOrange.shade700.withOpacity(0.98),
-                Colors.red.shade800.withOpacity(0.98),
-              ],
-              begin: Alignment.centerLeft,
-              end: Alignment.centerRight,
-            ),
-          ),
-          child: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 6),
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final isMobile = constraints.maxWidth < 700;
-                  return Row(
+      body: Row(
+        children: [
+          // Sidebar
+          if (!isMobile)
+            Container(
+              width: 250,
+              height: double.infinity,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    orange.withOpacity(0.98),
+                    Colors.deepOrange.shade700.withOpacity(0.98),
+                    Colors.red.shade800.withOpacity(0.98),
+                  ],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.07),
+                    blurRadius: 12,
+                  ),
+                ],
+              ),
+              child: Column(
+                children: [
+                  const SizedBox(height: 32),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Row(
-                        children: [
-                          Container(
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              gradient: LinearGradient(
-                                colors: [
-                                  orange.withOpacity(0.22),
-                                  yellow.withOpacity(0.13),
-                                ],
-                              ),
-                            ),
-                            padding: const EdgeInsets.all(8),
-                            child: Icon(Icons.shield, color: Colors.white, size: 32),
+                      Container(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: LinearGradient(
+                            colors: [
+                              orange.withOpacity(0.22),
+                              yellow.withOpacity(0.13),
+                            ],
                           ),
-                          const SizedBox(width: 12),
-                          Text(
-                            'DRRMIS',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 24,
-                              color: Colors.white,
-                              letterSpacing: 1.3,
-                              shadows: [
-                                Shadow(
-                                  color: Colors.black.withOpacity(0.08),
-                                  blurRadius: 4,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
+                        ),
+                        padding: const EdgeInsets.all(8),
+                        child: Icon(Icons.shield, color: Colors.white, size: 32),
                       ),
-                      const SizedBox(width: 24),
-                      if (!isMobile)
-                        ...List.generate(navItems.length, (i) {
-                          final selected = _selectedIndex == i;
-                          final menuColors = [
-                            orange,
-                            yellow,
-                            red,
-                            Colors.deepOrange,
-                            Colors.amber,
-                            Colors.deepOrangeAccent,
-                            Colors.orangeAccent,
-                          ];
-                          final menuColor = menuColors[i % menuColors.length];
-                          return Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 2),
-                            child: MouseRegion(
-                              cursor: SystemMouseCursors.click,
-                              child: AnimatedContainer(
-                                duration: const Duration(milliseconds: 180),
-                                decoration: BoxDecoration(
-                                  color: selected
-                                      ? menuColor.withOpacity(0.20)
-                                      : Colors.transparent,
-                                  borderRadius: BorderRadius.circular(22),
-                                ),
-                                child: TextButton(
-                                  style: TextButton.styleFrom(
-                                    foregroundColor: selected
-                                        ? menuColor
-                                        : Colors.white.withOpacity(0.92),
-                                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                                    textStyle: TextStyle(
-                                      fontWeight: selected ? FontWeight.bold : FontWeight.w500,
-                                      fontSize: 17,
-                                      letterSpacing: 0.2,
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(22),
-                                    ),
-                                  ),
-                                  onPressed: () {
-                                    setState(() {
-                                      _selectedIndex = i;
-                                    });
-                                  },
-                                  child: Row(
-                                    children: [
-                                      Icon(
-                                        _getMenuIcon(navItems[i], isSchool),
-                                        size: 20,
-                                        color: selected ? menuColor : Colors.white.withOpacity(0.85),
-                                      ),
-                                      const SizedBox(width: 7),
-                                      Text(navItems[i]),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                          );
-                        }),
-                      if (isMobile)
-                        PopupMenuButton<int>(
-                          icon: const Icon(Icons.menu, color: Colors.white),
+                      const SizedBox(width: 12),
+                      Text(
+                        'DRRMIS',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 22,
                           color: Colors.white,
-                          onSelected: (i) {
+                          letterSpacing: 1.3,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 32),
+                  // Navigation items
+                  ...List.generate(navItems.length, (i) {
+                    final selected = _selectedIndex == i;
+                    final menuColors = [
+                      orange,
+                      yellow,
+                      red,
+                      Colors.deepOrange,
+                      Colors.amber,
+                      Colors.deepOrangeAccent,
+                      Colors.orangeAccent,
+                    ];
+                    final menuColor = menuColors[i % menuColors.length];
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 12),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 180),
+                        decoration: BoxDecoration(
+                          color: selected ? menuColor.withOpacity(0.20) : Colors.transparent,
+                          borderRadius: BorderRadius.circular(18),
+                        ),
+                        child: ListTile(
+                          leading: Icon(
+                            _getMenuIcon(navItems[i], isSchool),
+                            color: selected ? menuColor : Colors.white.withOpacity(0.85),
+                          ),
+                          title: Text(
+                            navItems[i],
+                            style: TextStyle(
+                              color: selected ? menuColor : Colors.white.withOpacity(0.92),
+                              fontWeight: selected ? FontWeight.bold : FontWeight.w500,
+                              fontSize: 16,
+                            ),
+                          ),
+                          onTap: () {
                             setState(() {
                               _selectedIndex = i;
                             });
                           },
-                          itemBuilder: (context) => [
-                            for (int i = 0; i < navItems.length; i++)
-                              PopupMenuItem(
-                                value: i,
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      _getMenuIcon(navItems[i], isSchool),
-                                      color: orange,
-                                      size: 20,
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Text(navItems[i]),
-                                  ],
-                                ),
-                              ),
-                          ],
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(18),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                         ),
-                      const Spacer(),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.13),
-                          borderRadius: BorderRadius.circular(22),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              isSchool ? Icons.school : Icons.admin_panel_settings,
+                      ),
+                    );
+                  }),
+                  const Spacer(),
+                  // User info and logout
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.13),
+                        borderRadius: BorderRadius.circular(18),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            isSchool ? Icons.school : Icons.admin_panel_settings,
+                            color: Colors.white,
+                            size: 22,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            isSchool ? 'School' : 'Admin',
+                            style: const TextStyle(
                               color: Colors.white,
-                              size: 22,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 15,
                             ),
-                            const SizedBox(width: 8),
-                            Text(
-                              isSchool ? 'School' : 'Admin',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w600,
-                                fontSize: 17,
-                              ),
+                          ),
+                          const Spacer(),
+                          CircleAvatar(
+                            radius: 16,
+                            backgroundColor: Colors.white.withOpacity(0.18),
+                            child: IconButton(
+                              icon: const Icon(Icons.account_circle, color: Colors.white, size: 18),
+                              onPressed: () {},
+                              tooltip: 'Profile',
                             ),
-                            const SizedBox(width: 18),
-                            CircleAvatar(
-                              radius: 18,
-                              backgroundColor: Colors.white.withOpacity(0.18),
-                              child: IconButton(
-                                icon: const Icon(Icons.account_circle, color: Colors.white),
-                                onPressed: () {},
-                                tooltip: 'Profile',
-                              ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.logout, color: Colors.white, size: 18),
+                            tooltip: 'Logout',
+                            onPressed: _logout,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          // Main content area
+          Expanded(
+            child: Column(
+              children: [
+                // Header area
+                Container(
+                  width: double.infinity,
+                  height: 120,
+                  margin: const EdgeInsets.only(bottom: 18),
+                  padding: EdgeInsets.zero,
+                  decoration: null,
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      // Background image with lower opacity and center alignment
+                      Opacity(
+                        opacity: 0.16, // Lowered opacity for a subtler effect
+                        child: Image.asset(
+                          'assets/header.jpg',
+                          fit: BoxFit.cover,
+                          alignment: Alignment.center, // Show the middle part of the image
+                          width: double.infinity,
+                          height: double.infinity,
+                        ),
+                      ),
+                      Container(
+                        color: Colors.black.withOpacity(0.10), // Optional: subtle overlay for contrast
+                      ),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Padding(
+                          padding: const EdgeInsets.only(left: 32, top: 28),
+                          child: Text(
+                            'Roxas City',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 38,
+                              letterSpacing: 1.1,
+                              shadows: [
+                                Shadow(
+                                  blurRadius: 8,
+                                  color: Colors.black38,
+                                  offset: Offset(1, 2),
+                                ),
+                              ],
                             ),
-                            const SizedBox(width: 8),
-                            IconButton(
-                              icon: const Icon(Icons.logout, color: Colors.white),
-                              tooltip: 'Logout',
-                              onPressed: _logout,
-                            ),
-                          ],
+                          ),
                         ),
                       ),
                     ],
-                  );
-                },
-              ),
-            ),
-          ),
-        ),
-      ),
-      body: Container(
-        color: Theme.of(context).scaffoldBackgroundColor,
-        alignment: Alignment.topCenter,
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: EdgeInsets.only(
-              top: isMobile ? 12 : 32,
-              left: isMobile ? 4 : 16,
-              right: isMobile ? 4 : 16,
-              bottom: isMobile ? 8 : 16,
-            ),
-            child: ConstrainedBox(
-              constraints: BoxConstraints(
-                maxWidth: isMobile ? double.infinity : 2000,
-              ),
-              child: Card(
-                elevation: 5,
-                margin: EdgeInsets.zero,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
-                color: Colors.white.withOpacity(0.98),
-                child: Padding(
-                  padding: EdgeInsets.symmetric(
-                    vertical: isMobile ? 12 : 32,
-                    horizontal: isMobile ? 6 : 32,
                   ),
-                  child: pages[_selectedIndex],
                 ),
-              ),
+                // Page content
+                Expanded(
+                  child: Container(
+                    color: Theme.of(context).scaffoldBackgroundColor,
+                    alignment: Alignment.topCenter,
+                    child: SingleChildScrollView(
+                      child: Padding(
+                        padding: EdgeInsets.only(
+                          top: isMobile ? 12 : 32,
+                          left: isMobile ? 4 : 16,
+                          right: isMobile ? 4 : 16,
+                          bottom: isMobile ? 8 : 16,
+                        ),
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(
+                            maxWidth: isMobile ? double.infinity : 2000,
+                          ),
+                          child: Card(
+                            elevation: 5,
+                            margin: EdgeInsets.zero,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+                            color: Colors.white.withOpacity(0.98),
+                            child: Padding(
+                              padding: EdgeInsets.symmetric(
+                                vertical: isMobile ? 12 : 32,
+                                horizontal: isMobile ? 6 : 32,
+                              ),
+                              child: pages[_selectedIndex],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
-        ),
+        ],
       ),
+      // For mobile, show a drawer for navigation
+      drawer: isMobile
+          ? Drawer(
+              child: Column(
+                children: [
+                  DrawerHeader(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          orange.withOpacity(0.98),
+                          Colors.deepOrange.shade700.withOpacity(0.98),
+                          Colors.red.shade800.withOpacity(0.98),
+                        ],
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: LinearGradient(
+                              colors: [
+                                orange.withOpacity(0.22),
+                                yellow.withOpacity(0.13),
+                              ],
+                            ),
+                          ),
+                          padding: const EdgeInsets.all(8),
+                          child: Icon(Icons.shield, color: Colors.white, size: 32),
+                        ),
+                        const SizedBox(width: 12),
+                        Text(
+                          'DRRMIS',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 22,
+                            color: Colors.white,
+                            letterSpacing: 1.3,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  ...List.generate(navItems.length, (i) {
+                    final selected = _selectedIndex == i;
+                    final menuColors = [
+                      orange,
+                      yellow,
+                      red,
+                      Colors.deepOrange,
+                      Colors.amber,
+                      Colors.deepOrangeAccent,
+                      Colors.orangeAccent,
+                    ];
+                    final menuColor = menuColors[i % menuColors.length];
+                    return ListTile(
+                      leading: Icon(
+                        _getMenuIcon(navItems[i], isSchool),
+                        color: selected ? menuColor : Colors.black87,
+                      ),
+                      title: Text(
+                        navItems[i],
+                        style: TextStyle(
+                          color: selected ? menuColor : Colors.black87,
+                          fontWeight: selected ? FontWeight.bold : FontWeight.w500,
+                        ),
+                      ),
+                      onTap: () {
+                        setState(() {
+                          _selectedIndex = i;
+                        });
+                        Navigator.pop(context);
+                      },
+                    );
+                  }),
+                  const Spacer(),
+                  ListTile(
+                    leading: Icon(
+                      isSchool ? Icons.school : Icons.admin_panel_settings,
+                      color: Colors.black54,
+                    ),
+                    title: Text(isSchool ? 'School' : 'Admin'),
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.logout, color: Colors.black54),
+                    title: const Text('Logout'),
+                    onTap: _logout,
+                  ),
+                ],
+              ),
+            )
+          : null,
     );
   }
 

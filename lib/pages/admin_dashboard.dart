@@ -205,7 +205,9 @@ class AdminDashboardPage extends StatelessWidget {
                               ),
                             ),
                             const SizedBox(height: 32),
-                            Row(
+                            Wrap(
+                              spacing: 24,
+                              runSpacing: 18,
                               children: [
                                 _statCard(
                                   color: orange,
@@ -213,7 +215,6 @@ class AdminDashboardPage extends StatelessWidget {
                                   value: '120',
                                   label: 'Schools',
                                 ),
-                                const SizedBox(width: 24),
                                 _statCard(
                                   color: yellow,
                                   icon: Icons.check_circle,
@@ -225,7 +226,6 @@ class AdminDashboardPage extends StatelessWidget {
                                     Color(0xFFFFC107),
                                   ],
                                 ),
-                                const SizedBox(width: 24),
                                 _statCard(
                                   color: red,
                                   icon: Icons.camera_alt_rounded,
