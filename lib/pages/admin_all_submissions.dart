@@ -49,98 +49,101 @@ class AdminAllSubmissionsPage extends StatelessWidget {
                         taskSchoolSub.putIfAbsent(taskId, () => {})[schoolId] = data;
                       }
                     }
-                    return ListView(
+                    return SingleChildScrollView(
                       padding: EdgeInsets.all(isMobile ? 8 : 24),
-                      children: [
-                        Text('All Submissions', style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                          fontSize: isMobile ? 18 : null,
-                          color: colorScheme.primary,
-                        )),
-                        SizedBox(height: isMobile ? 8 : 16),
-                        ...tasks.map((taskDoc) {
-                          final task = taskDoc.data() as Map<String, dynamic>;
-                          final taskId = taskDoc.id;
-                          final taskTitle = '${task['type']} (${task['frequency']})';
-                          final deadline = (task['deadline'] as Timestamp?)?.toDate();
-                          return Card(
-                            margin: EdgeInsets.only(bottom: isMobile ? 12 : 24),
-                            color: colorScheme.secondary.withOpacity(0.13),
-                            child: Padding(
-                              padding: EdgeInsets.all(isMobile ? 10 : 20),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    taskTitle,
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: isMobile ? 15 : 18,
-                                      color: colorScheme.primary,
-                                    ),
-                                  ),
-                                  if (deadline != null)
-                                    Padding(
-                                      padding: const EdgeInsets.only(top: 2, bottom: 8),
-                                      child: Text(
-                                        'Deadline: ${deadline.year}-${deadline.month.toString().padLeft(2, '0')}-${deadline.day.toString().padLeft(2, '0')}',
-                                        style: TextStyle(fontSize: isMobile ? 12 : 14, color: Colors.grey[700]),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('All Submissions', style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                            fontSize: isMobile ? 18 : null,
+                            color: colorScheme.primary,
+                          )),
+                          SizedBox(height: isMobile ? 8 : 16),
+                          ...tasks.map((taskDoc) {
+                            final task = taskDoc.data() as Map<String, dynamic>;
+                            final taskId = taskDoc.id;
+                            final taskTitle = '${task['type']} (${task['frequency']})';
+                            final deadline = (task['deadline'] as Timestamp?)?.toDate();
+                            return Card(
+                              margin: EdgeInsets.only(bottom: isMobile ? 12 : 24),
+                              color: colorScheme.secondary.withOpacity(0.13),
+                              child: Padding(
+                                padding: EdgeInsets.all(isMobile ? 10 : 20),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      taskTitle,
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: isMobile ? 15 : 18,
+                                        color: colorScheme.primary,
                                       ),
                                     ),
-                                  SingleChildScrollView(
-                                    scrollDirection: Axis.horizontal,
-                                    child: DataTable(
-                                      columns: const [
-                                        DataColumn(label: Text('School')),
-                                        DataColumn(label: Text('Status')),
-                                        DataColumn(label: Text('Submitted At')),
-                                        DataColumn(label: Text('Action')),
-                                      ],
-                                      rows: schools.map((schoolDoc) {
-                                        final school = schoolDoc.data() as Map<String, dynamic>;
-                                        final schoolId = schoolDoc.id;
-                                        final sub = taskSchoolSub[taskId]?[schoolId];
-                                        final status = sub != null ? 'Complied' : 'Not Yet';
-                                        final submittedAt = sub != null && sub['submittedAt'] != null
-                                            ? (sub['submittedAt'] as Timestamp).toDate()
-                                            : null;
-                                        return DataRow(cells: [
-                                          DataCell(Text(school['name'] ?? school['email'] ?? 'School')),
-                                          DataCell(
-                                            Chip(
-                                              label: Text(status),
-                                              backgroundColor: sub != null ? colorScheme.primary.withOpacity(0.18) : colorScheme.secondary.withOpacity(0.18),
-                                              labelStyle: TextStyle(
-                                                color: sub != null ? colorScheme.primary : colorScheme.secondary,
-                                                fontWeight: FontWeight.w600,
+                                    if (deadline != null)
+                                      Padding(
+                                        padding: const EdgeInsets.only(top: 2, bottom: 8),
+                                        child: Text(
+                                          'Deadline: ${deadline.year}-${deadline.month.toString().padLeft(2, '0')}-${deadline.day.toString().padLeft(2, '0')}',
+                                          style: TextStyle(fontSize: isMobile ? 12 : 14, color: Colors.grey[700]),
+                                        ),
+                                      ),
+                                    SingleChildScrollView(
+                                      scrollDirection: Axis.horizontal,
+                                      child: DataTable(
+                                        columns: const [
+                                          DataColumn(label: Text('School')),
+                                          DataColumn(label: Text('Status')),
+                                          DataColumn(label: Text('Submitted At')),
+                                          DataColumn(label: Text('Action')),
+                                        ],
+                                        rows: schools.map((schoolDoc) {
+                                          final school = schoolDoc.data() as Map<String, dynamic>;
+                                          final schoolId = schoolDoc.id;
+                                          final sub = taskSchoolSub[taskId]?[schoolId];
+                                          final status = sub != null ? 'Complied' : 'Not Yet';
+                                          final submittedAt = sub != null && sub['submittedAt'] != null
+                                              ? (sub['submittedAt'] as Timestamp).toDate()
+                                              : null;
+                                          return DataRow(cells: [
+                                            DataCell(Text(school['name'] ?? school['email'] ?? 'School')),
+                                            DataCell(
+                                              Chip(
+                                                label: Text(status),
+                                                backgroundColor: sub != null ? colorScheme.primary.withOpacity(0.18) : colorScheme.secondary.withOpacity(0.18),
+                                                labelStyle: TextStyle(
+                                                  color: sub != null ? colorScheme.primary : colorScheme.secondary,
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
                                               ),
-                                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
                                             ),
-                                          ),
-                                          DataCell(Text(
-                                            submittedAt != null
-                                              ? '${submittedAt.year}-${submittedAt.month.toString().padLeft(2, '0')}-${submittedAt.day.toString().padLeft(2, '0')}'
-                                              : '-',
-                                          )),
-                                          DataCell(
-                                            sub != null
-                                              ? TextButton(
-                                                  onPressed: () {
-                                                    // TODO: View submission details
-                                                  },
-                                                  child: const Text('View'),
-                                                )
-                                              : const SizedBox(),
-                                          ),
-                                        ]);
-                                      }).toList(),
+                                            DataCell(Text(
+                                              submittedAt != null
+                                                ? '${submittedAt.year}-${submittedAt.month.toString().padLeft(2, '0')}-${submittedAt.day.toString().padLeft(2, '0')}'
+                                                : '-',
+                                            )),
+                                            DataCell(
+                                              sub != null
+                                                ? TextButton(
+                                                    onPressed: () {
+                                                      // TODO: View submission details
+                                                    },
+                                                    child: const Text('View'),
+                                                  )
+                                                : const SizedBox(),
+                                            ),
+                                          ]);
+                                        }).toList(),
+                                      ),
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
-                            ),
-                          );
-                        }).toList(),
-                      ],
+                            );
+                          }).toList(),
+                        ],
+                      ),
                     );
                   },
                 );

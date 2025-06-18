@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'pages/school_home.dart';
 import 'pages/school_announcements.dart';
-import 'pages/school_tasks.dart';
-import 'pages/school_submit_form.dart';
+import 'pages/school_tasks.dart' as tasks;
+import 'pages/school_submit_form.dart' as submit_form;
 import 'pages/school_my_submissions.dart';
 import 'pages/admin_dashboard.dart';
 import 'pages/admin_announcements.dart';
@@ -35,11 +35,11 @@ class _AppShellState extends State<AppShell> {
           onToggleDarkMode: widget.onToggleDarkMode,
           darkMode: widget.darkMode,
         ),
-        SchoolTasksPage(
+        tasks.SchoolTasksPage(
           onToggleDarkMode: widget.onToggleDarkMode,
           darkMode: widget.darkMode,
         ),
-        SchoolSubmitFormPage(
+        submit_form.SchoolSubmitFormPage(
           onToggleDarkMode: widget.onToggleDarkMode,
           darkMode: widget.darkMode,
         ),
