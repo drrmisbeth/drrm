@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'school_my_submissions.dart';
+// <-- Add this import
 
 class SchoolTasksPage extends StatelessWidget {
   final VoidCallback? onToggleDarkMode;
@@ -100,7 +103,7 @@ class SchoolTasksPage extends StatelessWidget {
                                                   task['type'] ?? '',
                                                   style: TextStyle(
                                                     fontWeight: FontWeight.bold,
-                                                    fontSize: 20,
+                                                    fontSize:
                                                     color: Colors.black,
                                                   ),
                                                   overflow: TextOverflow.ellipsis,
@@ -168,7 +171,6 @@ class SchoolTasksPage extends StatelessWidget {
     );
   }
 }
-
 // --- Multi-step Submit Form Page ---
 
 class SchoolSubmitFormPage extends StatefulWidget {
@@ -228,141 +230,203 @@ class _SchoolSubmitFormPageState extends State<SchoolSubmitFormPage> {
   bool? reviewedContingencyPlan;
   final TextEditingController issuesConcerns = TextEditingController();
 
-  InputDecoration _inputDecoration(String label) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return InputDecoration(
-      labelText: label,
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
-      filled: true,
-      fillColor: colorScheme.surface.withOpacity(0.97),
-      contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 14),
-    );
-  }
+  // File upload state
+  List<PlatformFile> _pickedFiles = [];
+  List<String> _uploadedUrls = [];
+  bool _uploadingFiles = false;
+  static const int maxTotalBytes = 50 * 1024 * 1024; // 50MB
 
-  Widget _sectionTitle(String title, {IconData? icon}) {
+  // New: Controller for external links
+  final TextEditingController linksController = TextEditingController();
+
+  List<Widget> _buildStepContent(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8, top: 18),
+    final sectionColors = [
+      colorScheme.primary.withOpacity(0.10),
+      colorScheme.secondary.withOpacity(0.10),
+      Colors.orange.withOpacity(0.10),
+      Colors.green.withOpacity(0.10),
+    ];
+    final sectionIcons = [
+      Icons.flag_rounded,
+      Icons.flash_on_rounded,
+      Icons.people_alt_rounded,
+      Icons.check_circle_rounded,
+    ];
+    final sectionTitles = [
+      'Pre-Drill',
+      'Actual Drill',
+      'Personnel & Learners',
+      'Post-Drill',
+    ];
+
+    Widget sectionHeader(int idx) => Container(
+      decoration: BoxDecoration(
+        color: sectionColors[idx],
+        borderRadius: BorderRadius.circular(14),
+      ),
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 14),
+      margin: const EdgeInsets.only(bottom: 12),
       child: Row(
         children: [
-          if (icon != null) ...[
-            Icon(icon, color: colorScheme.primary, size: 22),
-            const SizedBox(width: 8),
-          ],
+          Icon(sectionIcons[idx], color: colorScheme.primary, size: 28),
+          const SizedBox(width: 10),
           Text(
-            title,
-            style: TextStyle(
+            sectionTitles[idx],
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
               fontWeight: FontWeight.bold,
-              fontSize: 20,
               color: colorScheme.primary,
-              letterSpacing: 1.1,
+              fontSize: 20,
             ),
           ),
         ],
       ),
     );
-  }
 
-  Widget _divider() => const SizedBox(height: 18);
-
-  List<Widget> _buildStepContent(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final isMobile = MediaQuery.of(context).size.width < 700;
     switch (_step) {
       case 0:
         return [
-          _sectionTitle('Pre-Drill', icon: Icons.assignment_turned_in_rounded),
+          sectionHeader(0),
+          const Divider(height: 24, thickness: 1.2),
           ...preDrill.keys.map((q) => Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4),
-                child: Row(
-                  children: [
-                    Expanded(child: Text(q, style: const TextStyle(fontSize: 15))),
-                    ToggleButtons(
-                      isSelected: [
-                        preDrill[q] == true,
-                        preDrill[q] == false,
-                      ],
-                      onPressed: (idx) {
-                        setState(() {
-                          preDrill[q] = idx == 0;
-                        });
-                      },
-                      borderRadius: BorderRadius.circular(12),
-                      selectedColor: Colors.white,
-                      fillColor: colorScheme.primary,
-                      color: colorScheme.primary,
-                      constraints: const BoxConstraints(minWidth: 48, minHeight: 36),
-                      children: const [
-                        Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 12),
-                          child: Text('Yes'),
-                        ),
-                        Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 12),
-                          child: Text('No'),
-                        ),
-                      ],
-                    ),
-                  ],
+            padding: const EdgeInsets.symmetric(vertical: 6),
+            child: Row(
+              children: [
+                Expanded(child: Text(q, style: const TextStyle(fontSize: 15))),
+                Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    color: colorScheme.primary.withOpacity(0.07),
+                  ),
+                  child: ToggleButtons(
+                    isSelected: [
+                      preDrill[q] == true,
+                      preDrill[q] == false,
+                    ],
+                    onPressed: (idx) {
+                      setState(() {
+                        preDrill[q] = idx == 0;
+                      });
+                    },
+                    borderRadius: BorderRadius.circular(12),
+                    selectedColor: Colors.white,
+                    fillColor: colorScheme.primary,
+                    color: colorScheme.primary,
+                    constraints: const BoxConstraints(minWidth: 48, minHeight: 36),
+                    children: const [
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 12),
+                        child: Text('Yes'),
+                      ),
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 12),
+                        child: Text('No'),
+                      ),
+                    ],
+                  ),
                 ),
-              )),
-          Padding(
-            padding: const EdgeInsets.only(top: 8, bottom: 4),
-            child: TextField(
-              controller: additionalRemarks,
-              decoration: _inputDecoration('Additional Remarks'),
-              minLines: 1,
-              maxLines: 3,
+              ],
             ),
+          )),
+          const SizedBox(height: 14),
+          TextField(
+            controller: additionalRemarks,
+            decoration: InputDecoration(
+              labelText: 'Additional Remarks',
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              filled: true,
+              fillColor: colorScheme.secondary.withOpacity(0.07),
+              prefixIcon: const Icon(Icons.note_alt_outlined),
+            ),
+            minLines: 1,
+            maxLines: 3,
           ),
         ];
       case 1:
         return [
-          _sectionTitle('Actual Drill', icon: Icons.event_available_rounded),
+          sectionHeader(1),
+          const Divider(height: 24, thickness: 1.2),
           Row(
             children: [
               Expanded(child: Text('Conducted "DUCK, COVER, and HOLD"?', style: const TextStyle(fontSize: 15))),
-              Switch(
-                value: duckCoverHold ?? false,
-                onChanged: (v) => setState(() => duckCoverHold = v),
-                activeColor: colorScheme.primary,
+              Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  color: colorScheme.primary.withOpacity(0.07),
+                ),
+                child: ToggleButtons(
+                  isSelected: [duckCoverHold == true, duckCoverHold == false],
+                  onPressed: (idx) => setState(() => duckCoverHold = idx == 0),
+                  borderRadius: BorderRadius.circular(12),
+                  selectedColor: Colors.white,
+                  fillColor: colorScheme.primary,
+                  color: colorScheme.primary,
+                  constraints: const BoxConstraints(minWidth: 48, minHeight: 36),
+                  children: const [
+                    Padding(padding: EdgeInsets.symmetric(horizontal: 12), child: Text('Yes')),
+                    Padding(padding: EdgeInsets.symmetric(horizontal: 12), child: Text('No')),
+                  ],
+                ),
               ),
             ],
           ),
+          const SizedBox(height: 10),
           Row(
             children: [
               Expanded(child: Text('Conducted evacuation drill?', style: const TextStyle(fontSize: 15))),
-              Switch(
-                value: conductedEvacuationDrill ?? false,
-                onChanged: (v) => setState(() => conductedEvacuationDrill = v),
-                activeColor: colorScheme.primary,
+              Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  color: colorScheme.primary.withOpacity(0.07),
+                ),
+                child: ToggleButtons(
+                  isSelected: [conductedEvacuationDrill == true, conductedEvacuationDrill == false],
+                  onPressed: (idx) => setState(() => conductedEvacuationDrill = idx == 0),
+                  borderRadius: BorderRadius.circular(12),
+                  selectedColor: Colors.white,
+                  fillColor: colorScheme.primary,
+                  color: colorScheme.primary,
+                  constraints: const BoxConstraints(minWidth: 48, minHeight: 36),
+                  children: const [
+                    Padding(padding: EdgeInsets.symmetric(horizontal: 12), child: Text('Yes')),
+                    Padding(padding: EdgeInsets.symmetric(horizontal: 12), child: Text('No')),
+                  ],
+                ),
               ),
             ],
           ),
-          Padding(
-            padding: const EdgeInsets.only(top: 8, bottom: 4),
-            child: TextField(
-              controller: otherActivities,
-              decoration: _inputDecoration('Other sub-activities conducted'),
-              minLines: 1,
-              maxLines: 3,
+          const SizedBox(height: 10),
+          TextField(
+            controller: otherActivities,
+            decoration: InputDecoration(
+              labelText: 'Other sub-activities conducted (symposium, advocacy campaigns, etc.)',
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              filled: true,
+              fillColor: colorScheme.secondary.withOpacity(0.07),
+              prefixIcon: const Icon(Icons.event_note_outlined),
             ),
+            minLines: 1,
+            maxLines: 3,
           ),
         ];
       case 2:
         return [
-          _sectionTitle('Personnel & Learners', icon: Icons.people_alt_rounded),
-          Padding(
-            padding: const EdgeInsets.only(bottom: 6),
-            child: Text('No. of Personnel (Total Population)', style: Theme.of(context).textTheme.titleMedium),
-          ),
+          sectionHeader(2),
+          const Divider(height: 24, thickness: 1.2),
+          Text('No. of Personnel (Total Population)', style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 4),
           Row(
             children: [
               Expanded(
                 child: TextField(
                   controller: teachingPersonnelTotal,
                   keyboardType: TextInputType.number,
-                  decoration: _inputDecoration('Teaching Personnel'),
+                  decoration: InputDecoration(
+                    labelText: 'Teaching Personnel',
+                    filled: true,
+                    fillColor: Colors.grey[100],
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
                 ),
               ),
               const SizedBox(width: 8),
@@ -370,23 +434,31 @@ class _SchoolSubmitFormPageState extends State<SchoolSubmitFormPage> {
                 child: TextField(
                   controller: nonTeachingPersonnelTotal,
                   keyboardType: TextInputType.number,
-                  decoration: _inputDecoration('Non-Teaching Personnel'),
+                  decoration: InputDecoration(
+                    labelText: 'Non-Teaching Personnel',
+                    filled: true,
+                    fillColor: Colors.grey[100],
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 10),
-          Padding(
-            padding: const EdgeInsets.only(bottom: 6, top: 8),
-            child: Text('No. of Personnel Participated', style: Theme.of(context).textTheme.titleMedium),
-          ),
+          Text('No. of Personnel Participated', style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 4),
           Row(
             children: [
               Expanded(
                 child: TextField(
                   controller: teachingPersonnelParticipated,
                   keyboardType: TextInputType.number,
-                  decoration: _inputDecoration('Teaching Personnel'),
+                  decoration: InputDecoration(
+                    labelText: 'Teaching Personnel',
+                    filled: true,
+                    fillColor: Colors.grey[100],
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
                 ),
               ),
               const SizedBox(width: 8),
@@ -394,23 +466,31 @@ class _SchoolSubmitFormPageState extends State<SchoolSubmitFormPage> {
                 child: TextField(
                   controller: nonTeachingPersonnelParticipated,
                   keyboardType: TextInputType.number,
-                  decoration: _inputDecoration('Non-Teaching Personnel'),
+                  decoration: InputDecoration(
+                    labelText: 'Non-Teaching Personnel',
+                    filled: true,
+                    fillColor: Colors.grey[100],
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 10),
-          Padding(
-            padding: const EdgeInsets.only(bottom: 6, top: 8),
-            child: Text('No. of Learners (Total Population)', style: Theme.of(context).textTheme.titleMedium),
-          ),
+          Text('No. of Learners (Total Population)', style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 4),
           Row(
             children: [
               Expanded(
                 child: TextField(
                   controller: learnersMale,
                   keyboardType: TextInputType.number,
-                  decoration: _inputDecoration('Male'),
+                  decoration: InputDecoration(
+                    labelText: 'Male',
+                    filled: true,
+                    fillColor: Colors.grey[100],
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
                 ),
               ),
               const SizedBox(width: 8),
@@ -418,18 +498,29 @@ class _SchoolSubmitFormPageState extends State<SchoolSubmitFormPage> {
                 child: TextField(
                   controller: learnersFemale,
                   keyboardType: TextInputType.number,
-                  decoration: _inputDecoration('Female'),
+                  decoration: InputDecoration(
+                    labelText: 'Female',
+                    filled: true,
+                    fillColor: Colors.grey[100],
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
                 ),
               ),
             ],
           ),
+          const SizedBox(height: 6),
           Row(
             children: [
               Expanded(
                 child: TextField(
                   controller: learnersIP,
                   keyboardType: TextInputType.number,
-                  decoration: _inputDecoration('IP'),
+                  decoration: InputDecoration(
+                    labelText: 'IP',
+                    filled: true,
+                    fillColor: Colors.grey[100],
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
                 ),
               ),
               const SizedBox(width: 8),
@@ -437,7 +528,12 @@ class _SchoolSubmitFormPageState extends State<SchoolSubmitFormPage> {
                 child: TextField(
                   controller: learnersMuslim,
                   keyboardType: TextInputType.number,
-                  decoration: _inputDecoration('Muslim'),
+                  decoration: InputDecoration(
+                    labelText: 'Muslim',
+                    filled: true,
+                    fillColor: Colors.grey[100],
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
                 ),
               ),
               const SizedBox(width: 8),
@@ -445,23 +541,31 @@ class _SchoolSubmitFormPageState extends State<SchoolSubmitFormPage> {
                 child: TextField(
                   controller: learnersPWD,
                   keyboardType: TextInputType.number,
-                  decoration: _inputDecoration('With Disability'),
+                  decoration: InputDecoration(
+                    labelText: 'With Disability',
+                    filled: true,
+                    fillColor: Colors.grey[100],
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 10),
-          Padding(
-            padding: const EdgeInsets.only(bottom: 6, top: 8),
-            child: Text('No. of Learners Participated', style: Theme.of(context).textTheme.titleMedium),
-          ),
+          Text('No. of Learners Participated', style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 4),
           Row(
             children: [
               Expanded(
                 child: TextField(
                   controller: learnersParticipatedMale,
                   keyboardType: TextInputType.number,
-                  decoration: _inputDecoration('Male'),
+                  decoration: InputDecoration(
+                    labelText: 'Male',
+                    filled: true,
+                    fillColor: Colors.grey[100],
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
                 ),
               ),
               const SizedBox(width: 8),
@@ -469,18 +573,29 @@ class _SchoolSubmitFormPageState extends State<SchoolSubmitFormPage> {
                 child: TextField(
                   controller: learnersParticipatedFemale,
                   keyboardType: TextInputType.number,
-                  decoration: _inputDecoration('Female'),
+                  decoration: InputDecoration(
+                    labelText: 'Female',
+                    filled: true,
+                    fillColor: Colors.grey[100],
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
                 ),
               ),
             ],
           ),
+          const SizedBox(height: 6),
           Row(
             children: [
               Expanded(
                 child: TextField(
                   controller: learnersParticipatedIP,
                   keyboardType: TextInputType.number,
-                  decoration: _inputDecoration('IP'),
+                  decoration: InputDecoration(
+                    labelText: 'IP',
+                    filled: true,
+                    fillColor: Colors.grey[100],
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
                 ),
               ),
               const SizedBox(width: 8),
@@ -488,7 +603,12 @@ class _SchoolSubmitFormPageState extends State<SchoolSubmitFormPage> {
                 child: TextField(
                   controller: learnersParticipatedMuslim,
                   keyboardType: TextInputType.number,
-                  decoration: _inputDecoration('Muslim'),
+                  decoration: InputDecoration(
+                    labelText: 'Muslim',
+                    filled: true,
+                    fillColor: Colors.grey[100],
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
                 ),
               ),
               const SizedBox(width: 8),
@@ -496,7 +616,12 @@ class _SchoolSubmitFormPageState extends State<SchoolSubmitFormPage> {
                 child: TextField(
                   controller: learnersParticipatedPWD,
                   keyboardType: TextInputType.number,
-                  decoration: _inputDecoration('With Disability'),
+                  decoration: InputDecoration(
+                    labelText: 'With Disability',
+                    filled: true,
+                    fillColor: Colors.grey[100],
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
                 ),
               ),
             ],
@@ -504,33 +629,44 @@ class _SchoolSubmitFormPageState extends State<SchoolSubmitFormPage> {
         ];
       case 3:
         return [
-          _sectionTitle('Post-Drill', icon: Icons.assignment_outlined),
+          sectionHeader(3),
+          const Divider(height: 24, thickness: 1.2),
           Row(
             children: [
               Expanded(child: Text('Conduct a review of Contingency Plan?', style: const TextStyle(fontSize: 15))),
-              ToggleButtons(
-                isSelected: [reviewedContingencyPlan == true, reviewedContingencyPlan == false],
-                onPressed: (idx) => setState(() => reviewedContingencyPlan = idx == 0),
-                borderRadius: BorderRadius.circular(12),
-                selectedColor: Colors.white,
-                fillColor: colorScheme.primary,
-                color: colorScheme.primary,
-                constraints: const BoxConstraints(minWidth: 48, minHeight: 36),
-                children: const [
-                  Padding(padding: EdgeInsets.symmetric(horizontal: 12), child: Text('Yes')),
-                  Padding(padding: EdgeInsets.symmetric(horizontal: 12), child: Text('No')),
-                ],
+              Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  color: colorScheme.primary.withOpacity(0.07),
+                ),
+                child: ToggleButtons(
+                  isSelected: [reviewedContingencyPlan == true, reviewedContingencyPlan == false],
+                  onPressed: (idx) => setState(() => reviewedContingencyPlan = idx == 0),
+                  borderRadius: BorderRadius.circular(12),
+                  selectedColor: Colors.white,
+                  fillColor: colorScheme.primary,
+                  color: colorScheme.primary,
+                  constraints: const BoxConstraints(minWidth: 48, minHeight: 36),
+                  children: const [
+                    Padding(padding: EdgeInsets.symmetric(horizontal: 12), child: Text('Yes')),
+                    Padding(padding: EdgeInsets.symmetric(horizontal: 12), child: Text('No')),
+                  ],
+                ),
               ),
             ],
           ),
-          Padding(
-            padding: const EdgeInsets.only(top: 8, bottom: 4),
-            child: TextField(
-              controller: issuesConcerns,
-              decoration: _inputDecoration('Issues/Concerns encountered during the actual conduct of drill'),
-              minLines: 2,
-              maxLines: 4,
+          const SizedBox(height: 10),
+          TextField(
+            controller: issuesConcerns,
+            decoration: InputDecoration(
+              labelText: 'Issues/Concerns encountered during the actual conduct of drill',
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              filled: true,
+              fillColor: colorScheme.secondary.withOpacity(0.07),
+              prefixIcon: const Icon(Icons.report_problem_outlined),
             ),
+            minLines: 2,
+            maxLines: 4,
           ),
         ];
       default:
@@ -538,10 +674,67 @@ class _SchoolSubmitFormPageState extends State<SchoolSubmitFormPage> {
     }
   }
 
+  Future<void> _pickFiles() async {
+    final result = await FilePicker.platform.pickFiles(
+      allowMultiple: true,
+      withData: true,
+      type: FileType.any,
+    );
+    if (result != null && result.files.isNotEmpty) {
+      final totalBytes = result.files.fold<int>(0, (sum, f) => sum + (f.bytes?.length ?? 0));
+      if (totalBytes > maxTotalBytes) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Total file size exceeds 50MB. Please select smaller files.')),
+        );
+        return;
+      }
+      setState(() {
+        _pickedFiles = result.files;
+      });
+    }
+  }
+
+  Future<List<String>> _uploadFilesToSupabase(List<PlatformFile> files) async {
+    final supabase = Supabase.instance.client;
+    List<String> urls = [];
+    for (final file in files) {
+      final path = 'submissions/${DateTime.now().millisecondsSinceEpoch}_${file.name}';
+      final res = await supabase.storage.from('attachments').uploadBinary(
+        path,
+        file.bytes!,
+        fileOptions: FileOptions(upsert: true),
+      );
+      if (res.isNotEmpty) {
+        final url = supabase.storage.from('attachments').getPublicUrl(path);
+        urls.add(url);
+      }
+    }
+    return urls;
+  }
+
   Future<void> _submit() async {
-    setState(() => _submitting = true);
+    setState(() {
+      _submitting = true;
+      _uploadingFiles = true;
+    });
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
+
+    // Upload files if any
+    List<String> fileUrls = [];
+    if (_pickedFiles.isNotEmpty) {
+      fileUrls = await _uploadFilesToSupabase(_pickedFiles);
+    }
+
+    setState(() => _uploadingFiles = false);
+
+    // Parse links (comma or newline separated)
+    final List<String> links = linksController.text
+        .split(RegExp(r'[\n,]'))
+        .map((e) => e.trim())
+        .where((e) => e.isNotEmpty)
+        .toList();
+
     await FirebaseFirestore.instance.collection('submissions').add({
       'schoolId': user.uid,
       'taskId': widget.taskId,
@@ -575,11 +768,14 @@ class _SchoolSubmitFormPageState extends State<SchoolSubmitFormPage> {
         'reviewedContingencyPlan': reviewedContingencyPlan,
         'issuesConcerns': issuesConcerns.text,
       },
+      'attachments': fileUrls,
+      'attachmentNames': _pickedFiles.map((f) => f.name).toList(),
+      'externalLinks': links,
     });
     setState(() => _submitting = false);
     if (!mounted) return;
     Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => SchoolMySubmissionsPage()),
+      MaterialPageRoute(builder: (_) => SchoolMySubmissionsPage(showSubmissionLink: true)),
       (route) => false,
     );
     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Form submitted!')));
@@ -594,73 +790,37 @@ class _SchoolSubmitFormPageState extends State<SchoolSubmitFormPage> {
         title: const Text('Submission Form'),
         backgroundColor: colorScheme.primary,
         foregroundColor: Colors.white,
-        elevation: 2,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(bottom: Radius.circular(18)),
-        ),
       ),
-      body: Center(
-        child: ConstrainedBox(
-          constraints: BoxConstraints(maxWidth: isMobile ? double.infinity : 650),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: isMobile ? 8 : 32, vertical: 18),
           child: Card(
-            elevation: 3,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+            elevation: 0,
             color: colorScheme.secondary.withOpacity(0.08),
-            margin: const EdgeInsets.symmetric(vertical: 24, horizontal: 8),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
             child: Padding(
-              padding: EdgeInsets.symmetric(vertical: isMobile ? 18 : 32, horizontal: isMobile ? 10 : 32),
+              padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 18),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Center(
-                    child: Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: Text(
-                        'Submission Form',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 28,
-                          color: colorScheme.primary,
-                          letterSpacing: 1.1,
+                  // Progress indicator
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 18),
+                    child: Row(
+                      children: List.generate(4, (i) => Expanded(
+                        child: Container(
+                          height: 7,
+                          margin: EdgeInsets.only(right: i < 3 ? 6 : 0),
+                          decoration: BoxDecoration(
+                            color: i <= _step ? colorScheme.primary : Colors.grey[300],
+                            borderRadius: BorderRadius.circular(8),
+                          ),
                         ),
-                      ),
+                      )),
                     ),
                   ),
-                  Stepper(
-                    type: isMobile ? StepperType.vertical : StepperType.horizontal,
-                    currentStep: _step,
-                    onStepTapped: (i) {
-                      if (!_submitting) setState(() => _step = i);
-                    },
-                    controlsBuilder: (context, details) => const SizedBox.shrink(),
-                    steps: [
-                      Step(
-                        title: const Text('Pre-Drill'),
-                        isActive: _step >= 0,
-                        state: _step > 0 ? StepState.complete : StepState.indexed,
-                        content: Column(children: _buildStepContent(context)),
-                      ),
-                      Step(
-                        title: const Text('Actual Drill'),
-                        isActive: _step >= 1,
-                        state: _step > 1 ? StepState.complete : StepState.indexed,
-                        content: Column(children: _buildStepContent(context)),
-                      ),
-                      Step(
-                        title: const Text('Personnel & Learners'),
-                        isActive: _step >= 2,
-                        state: _step > 2 ? StepState.complete : StepState.indexed,
-                        content: Column(children: _buildStepContent(context)),
-                      ),
-                      Step(
-                        title: const Text('Post-Drill'),
-                        isActive: _step >= 3,
-                        state: _step == 3 ? StepState.editing : StepState.indexed,
-                        content: Column(children: _buildStepContent(context)),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
+                  ..._buildStepContent(context),
+                  const SizedBox(height: 24),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -671,7 +831,7 @@ class _SchoolSubmitFormPageState extends State<SchoolSubmitFormPage> {
                           onPressed: _submitting ? null : () => setState(() => _step--),
                           style: OutlinedButton.styleFrom(
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                            foregroundColor: colorScheme.primary,
+                            side: BorderSide(color: colorScheme.primary, width: 2),
                           ),
                         ),
                       if (_step < 3)
@@ -707,6 +867,73 @@ class _SchoolSubmitFormPageState extends State<SchoolSubmitFormPage> {
                         ),
                     ],
                   ),
+                  // File picker UI (show on last step)
+                  if (_step == 3) ...[
+                    const SizedBox(height: 18),
+                    Text('Attachments (optional, max total 50MB):', style: TextStyle(fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 6),
+                    OutlinedButton.icon(
+                      icon: const Icon(Icons.attach_file),
+                      label: const Text('Add Files'),
+                      onPressed: _uploadingFiles || _submitting ? null : _pickFiles,
+                    ),
+                    if (_pickedFiles.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            ..._pickedFiles.map((f) => Row(
+                              children: [
+                                const Icon(Icons.insert_drive_file, size: 18),
+                                const SizedBox(width: 6),
+                                Expanded(child: Text(f.name, overflow: TextOverflow.ellipsis)),
+                                Text('${(f.size / 1024).toStringAsFixed(1)} KB', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                              ],
+                            )),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Total: ${( _pickedFiles.fold<int>(0, (sum, f) => sum + (f.bytes?.length ?? 0)) / (1024 * 1024)).toStringAsFixed(2)} MB',
+                              style: const TextStyle(fontSize: 12, color: Colors.grey),
+                            ),
+                          ],
+                        ),
+                      ),
+                    const SizedBox(height: 18),
+                    // New: Input for external links
+                    Text('External Links (e.g., Google Drive, YouTube, etc.):', style: TextStyle(fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 6),
+                    TextField(
+                      controller: linksController,
+                      decoration: InputDecoration(
+                        labelText: 'Paste links here (separate by comma or newline)',
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        prefixIcon: const Icon(Icons.link),
+                        filled: true,
+                        fillColor: Theme.of(context).colorScheme.secondary.withOpacity(0.07),
+                      ),
+                      minLines: 1,
+                      maxLines: 3,
+                    ),
+                  ],
+                  // Add link to My Submissions after submit (if needed)
+                  if (_step == 3 && !_submitting)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 18),
+                      child: Row(
+                        children: [
+                          const Text('Want to view your submission?'),
+                          TextButton(
+                            onPressed: () {
+                              Navigator.of(context).pushReplacement(
+                                MaterialPageRoute(builder: (_) => SchoolMySubmissionsPage()),
+                              );
+                            },
+                            child: const Text('Go to My Submissions'),
+                          ),
+                        ],
+                      ),
+                    ),
                 ],
               ),
             ),

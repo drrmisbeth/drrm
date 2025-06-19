@@ -5,7 +5,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 class SchoolMySubmissionsPage extends StatelessWidget {
   final VoidCallback? onToggleDarkMode;
   final bool darkMode;
-  const SchoolMySubmissionsPage({Key? key, this.onToggleDarkMode, this.darkMode = false}) : super(key: key);
+  final bool showSubmissionLink;
+  const SchoolMySubmissionsPage({Key? key, this.onToggleDarkMode, this.darkMode = false, this.showSubmissionLink = false}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -30,6 +31,17 @@ class SchoolMySubmissionsPage extends StatelessWidget {
                 letterSpacing: 1.2,
               ),
             ),
+            if (showSubmissionLink)
+              Padding(
+                padding: const EdgeInsets.only(top: 8, bottom: 8),
+                child: Row(
+                  children: [
+                    const Icon(Icons.check_circle, color: Colors.green, size: 20),
+                    const SizedBox(width: 6),
+                    const Text('Submission successful!'),
+                  ],
+                ),
+              ),
             const SizedBox(height: 28),
             Expanded(
               child: StreamBuilder<QuerySnapshot>(
