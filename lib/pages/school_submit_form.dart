@@ -91,87 +91,279 @@ class _SchoolSubmitFormPageState extends State<SchoolSubmitFormPage> {
     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Form submitted!')));
   }
 
+  InputDecoration _inputDecoration(String label) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return InputDecoration(
+      labelText: label,
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+      filled: true,
+      fillColor: colorScheme.surface.withOpacity(0.97),
+      contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 14),
+    );
+  }
+
+  Widget _sectionTitle(String title) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8, top: 18),
+      child: Text(
+        title,
+        style: TextStyle(
+          fontWeight: FontWeight.bold,
+          fontSize: 20,
+          color: colorScheme.primary,
+          letterSpacing: 1.1,
+        ),
+      ),
+    );
+  }
+
+  Widget _divider() => const SizedBox(height: 18);
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    return SingleChildScrollView(
-      child: Padding(
-        padding: const EdgeInsets.all(18),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Pre-Drill', style: Theme.of(context).textTheme.titleLarge),
-            ...preDrill.keys.map((q) => CheckboxListTile(
-                  title: Text(q),
-                  value: preDrill[q],
-                  onChanged: (v) => setState(() => preDrill[q] = v ?? false),
-                )),
-            TextField(
-              controller: additionalRemarks,
-              decoration: const InputDecoration(labelText: 'Additional Remarks'),
+    final isMobile = MediaQuery.of(context).size.width < 700;
+    return Center(
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: isMobile ? double.infinity : 600),
+        child: Card(
+          elevation: 3,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+          color: colorScheme.secondary.withOpacity(0.08),
+          child: Padding(
+            padding: EdgeInsets.symmetric(vertical: isMobile ? 18 : 32, horizontal: isMobile ? 10 : 32),
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Text(
+                      'Submission Form',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 26,
+                        color: colorScheme.primary,
+                        letterSpacing: 1.1,
+                      ),
+                    ),
+                  ),
+                  _divider(),
+                  _sectionTitle('Pre-Drill'),
+                  ...preDrill.keys.map((q) => Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        child: Row(
+                          children: [
+                            Expanded(child: Text(q, style: const TextStyle(fontSize: 15))),
+                            Switch(
+                              value: preDrill[q] ?? false,
+                              onChanged: (v) => setState(() => preDrill[q] = v),
+                              activeColor: colorScheme.primary,
+                            ),
+                          ],
+                        ),
+                      )),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8, bottom: 4),
+                    child: TextField(
+                      controller: additionalRemarks,
+                      decoration: _inputDecoration('Additional Remarks'),
+                      minLines: 1,
+                      maxLines: 3,
+                    ),
+                  ),
+                  _divider(),
+                  _sectionTitle('Actual Drill'),
+                  Row(
+                    children: [
+                      Expanded(child: Text('Conducted "DUCK, COVER, and HOLD"?', style: const TextStyle(fontSize: 15))),
+                      Switch(
+                        value: duckCoverHold,
+                        onChanged: (v) => setState(() => duckCoverHold = v),
+                        activeColor: colorScheme.primary,
+                      ),
+                    ],
+                  ),
+                  Row(
+                    children: [
+                      Expanded(child: Text('Conducted evacuation drill?', style: const TextStyle(fontSize: 15))),
+                      Switch(
+                        value: conductedEvacuationDrill,
+                        onChanged: (v) => setState(() => conductedEvacuationDrill = v),
+                        activeColor: colorScheme.primary,
+                      ),
+                    ],
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8, bottom: 4),
+                    child: TextField(
+                      controller: otherActivities,
+                      decoration: _inputDecoration('Other sub-activities conducted'),
+                      minLines: 1,
+                      maxLines: 3,
+                    ),
+                  ),
+                  _divider(),
+                  _sectionTitle('Personnel Participation'),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: teachingMale,
+                          keyboardType: TextInputType.number,
+                          decoration: _inputDecoration('Teaching Male'),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: TextField(
+                          controller: teachingFemale,
+                          keyboardType: TextInputType.number,
+                          decoration: _inputDecoration('Teaching Female'),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: nonTeachingMale,
+                          keyboardType: TextInputType.number,
+                          decoration: _inputDecoration('Non-Teaching Male'),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: TextField(
+                          controller: nonTeachingFemale,
+                          keyboardType: TextInputType.number,
+                          decoration: _inputDecoration('Non-Teaching Female'),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: teachingPartMale,
+                          keyboardType: TextInputType.number,
+                          decoration: _inputDecoration('Teaching Part. Male'),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: TextField(
+                          controller: teachingPartFemale,
+                          keyboardType: TextInputType.number,
+                          decoration: _inputDecoration('Teaching Part. Female'),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: nonTeachingPartMale,
+                          keyboardType: TextInputType.number,
+                          decoration: _inputDecoration('Non-Teaching Part. Male'),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: TextField(
+                          controller: nonTeachingPartFemale,
+                          keyboardType: TextInputType.number,
+                          decoration: _inputDecoration('Non-Teaching Part. Female'),
+                        ),
+                      ),
+                    ],
+                  ),
+                  _divider(),
+                  _sectionTitle('Learners Participation'),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: learnersMale,
+                          keyboardType: TextInputType.number,
+                          decoration: _inputDecoration('Learners Male'),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: TextField(
+                          controller: learnersFemale,
+                          keyboardType: TextInputType.number,
+                          decoration: _inputDecoration('Learners Female'),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: learnersPartMale,
+                          keyboardType: TextInputType.number,
+                          decoration: _inputDecoration('Learners Part. Male'),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: TextField(
+                          controller: learnersPartFemale,
+                          keyboardType: TextInputType.number,
+                          decoration: _inputDecoration('Learners Part. Female'),
+                        ),
+                      ),
+                    ],
+                  ),
+                  _divider(),
+                  _sectionTitle('Post-Drill'),
+                  TextField(
+                    controller: issues,
+                    decoration: _inputDecoration('Issues/Concerns/Observations'),
+                    minLines: 2,
+                    maxLines: 4,
+                  ),
+                  const SizedBox(height: 24),
+                  Center(
+                    child: SizedBox(
+                      width: 200,
+                      child: ElevatedButton.icon(
+                        onPressed: _submitting ? null : _submit,
+                        icon: _submitting
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                              )
+                            : const Icon(Icons.send_rounded),
+                        label: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          child: Text(_submitting ? 'Submitting...' : 'Submit',
+                              style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: colorScheme.primary,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          elevation: 2,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-            const Divider(),
-            Text('Actual Drill', style: Theme.of(context).textTheme.titleLarge),
-            CheckboxListTile(
-              title: const Text('Conducted "DUCK, COVER, and HOLD"?'),
-              value: duckCoverHold,
-              onChanged: (v) => setState(() => duckCoverHold = v ?? false),
-            ),
-            CheckboxListTile(
-              title: const Text('Conducted evacuation drill?'),
-              value: conductedEvacuationDrill,
-              onChanged: (v) => setState(() => conductedEvacuationDrill = v ?? false),
-            ),
-            TextField(
-              controller: otherActivities,
-              decoration: const InputDecoration(labelText: 'Other sub-activities conducted'),
-            ),
-            const Divider(),
-            Text('Personnel Participation', style: Theme.of(context).textTheme.titleLarge),
-            Row(children: [
-              Expanded(child: TextField(controller: teachingMale, decoration: const InputDecoration(labelText: 'Teaching Male'))),
-              const SizedBox(width: 8),
-              Expanded(child: TextField(controller: teachingFemale, decoration: const InputDecoration(labelText: 'Teaching Female'))),
-            ]),
-            Row(children: [
-              Expanded(child: TextField(controller: nonTeachingMale, decoration: const InputDecoration(labelText: 'Non-Teaching Male'))),
-              const SizedBox(width: 8),
-              Expanded(child: TextField(controller: nonTeachingFemale, decoration: const InputDecoration(labelText: 'Non-Teaching Female'))),
-            ]),
-            Row(children: [
-              Expanded(child: TextField(controller: teachingPartMale, decoration: const InputDecoration(labelText: 'Teaching Part. Male'))),
-              const SizedBox(width: 8),
-              Expanded(child: TextField(controller: teachingPartFemale, decoration: const InputDecoration(labelText: 'Teaching Part. Female'))),
-            ]),
-            Row(children: [
-              Expanded(child: TextField(controller: nonTeachingPartMale, decoration: const InputDecoration(labelText: 'Non-Teaching Part. Male'))),
-              const SizedBox(width: 8),
-              Expanded(child: TextField(controller: nonTeachingPartFemale, decoration: const InputDecoration(labelText: 'Non-Teaching Part. Female'))),
-            ]),
-            const Divider(),
-            Text('Learners Participation', style: Theme.of(context).textTheme.titleLarge),
-            Row(children: [
-              Expanded(child: TextField(controller: learnersMale, decoration: const InputDecoration(labelText: 'Learners Male'))),
-              const SizedBox(width: 8),
-              Expanded(child: TextField(controller: learnersFemale, decoration: const InputDecoration(labelText: 'Learners Female'))),
-            ]),
-            Row(children: [
-              Expanded(child: TextField(controller: learnersPartMale, decoration: const InputDecoration(labelText: 'Learners Part. Male'))),
-              const SizedBox(width: 8),
-              Expanded(child: TextField(controller: learnersPartFemale, decoration: const InputDecoration(labelText: 'Learners Part. Female'))),
-            ]),
-            const Divider(),
-            Text('Post-Drill', style: Theme.of(context).textTheme.titleLarge),
-            TextField(
-              controller: issues,
-              decoration: const InputDecoration(labelText: 'Issues/Concerns/Observations'),
-            ),
-            const SizedBox(height: 18),
-            ElevatedButton(
-              onPressed: _submitting ? null : _submit,
-              child: _submitting ? const CircularProgressIndicator() : const Text('Submit'),
-            ),
-          ],
+          ),
         ),
       ),
     );
