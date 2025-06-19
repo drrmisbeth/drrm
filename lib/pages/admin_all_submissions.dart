@@ -67,6 +67,7 @@ class AdminAllSubmissionsPage extends StatelessWidget {
                             return Card(
                               margin: EdgeInsets.only(bottom: isMobile ? 12 : 24),
                               color: colorScheme.secondary.withOpacity(0.13),
+                              elevation: 0, // Remove shadow
                               child: Padding(
                                 padding: EdgeInsets.all(isMobile ? 10 : 20),
                                 child: Column(
