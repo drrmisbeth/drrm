@@ -85,57 +85,62 @@ class AdminAllSubmissionsPage extends StatelessWidget {
                                       Padding(
                                         padding: const EdgeInsets.only(top: 2, bottom: 8),
                                         child: Text(
-                                          'Deadline: ${deadline.year}-${deadline.month.toString().padLeft(2, '0')}-${deadline.day.toString().padLeft(2, '0')}',
+                                          'Deadline: ${deadline != null ? _formatDate(deadline) : "N/A"}',
                                           style: TextStyle(fontSize: isMobile ? 12 : 14, color: Colors.grey[700]),
                                         ),
                                       ),
                                     SingleChildScrollView(
                                       scrollDirection: Axis.horizontal,
-                                      child: DataTable(
-                                        columns: const [
-                                          DataColumn(label: Text('School')),
-                                          DataColumn(label: Text('Status')),
-                                          DataColumn(label: Text('Submitted At')),
-                                          DataColumn(label: Text('Action')),
-                                        ],
-                                        rows: schools.map((schoolDoc) {
-                                          final school = schoolDoc.data() as Map<String, dynamic>;
-                                          final schoolId = schoolDoc.id;
-                                          final sub = taskSchoolSub[taskId]?[schoolId];
-                                          final status = sub != null ? 'Complied' : 'Not Yet';
-                                          final submittedAt = sub != null && sub['submittedAt'] != null
-                                              ? (sub['submittedAt'] as Timestamp).toDate()
-                                              : null;
-                                          return DataRow(cells: [
-                                            DataCell(Text(school['name'] ?? school['email'] ?? 'School')),
-                                            DataCell(
-                                              Chip(
-                                                label: Text(status),
-                                                backgroundColor: sub != null ? colorScheme.primary.withOpacity(0.18) : colorScheme.secondary.withOpacity(0.18),
-                                                labelStyle: TextStyle(
-                                                  color: sub != null ? colorScheme.primary : colorScheme.secondary,
-                                                  fontWeight: FontWeight.w600,
+                                      child: SizedBox(
+                                        width: double.infinity,
+                                        child: DataTable(
+                                          columnSpacing: 28,
+                                          dataRowMinHeight: 44,
+                                          columns: const [
+                                            DataColumn(label: Text('School')),
+                                            DataColumn(label: Text('Status')),
+                                            DataColumn(label: Text('Submitted At')),
+                                            DataColumn(label: Text('Action')),
+                                          ],
+                                          rows: schools.map((schoolDoc) {
+                                            final school = schoolDoc.data() as Map<String, dynamic>;
+                                            final schoolId = schoolDoc.id;
+                                            final sub = taskSchoolSub[taskId]?[schoolId];
+                                            final status = sub != null ? 'Complied' : 'Not Yet';
+                                            final submittedAt = sub != null && sub['submittedAt'] != null
+                                                ? (sub['submittedAt'] as Timestamp).toDate()
+                                                : null;
+                                            return DataRow(cells: [
+                                              DataCell(Text(school['name'] ?? school['email'] ?? 'School')),
+                                              DataCell(
+                                                Chip(
+                                                  label: Text(status),
+                                                  backgroundColor: sub != null ? colorScheme.primary.withOpacity(0.18) : colorScheme.secondary.withOpacity(0.18),
+                                                  labelStyle: TextStyle(
+                                                    color: sub != null ? colorScheme.primary : colorScheme.secondary,
+                                                    fontWeight: FontWeight.w600,
+                                                  ),
+                                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
                                                 ),
-                                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
                                               ),
-                                            ),
-                                            DataCell(Text(
-                                              submittedAt != null
-                                                ? '${submittedAt.year}-${submittedAt.month.toString().padLeft(2, '0')}-${submittedAt.day.toString().padLeft(2, '0')}'
-                                                : '-',
-                                            )),
-                                            DataCell(
-                                              sub != null
-                                                ? TextButton(
-                                                    onPressed: () {
-                                                      // TODO: View submission details
-                                                    },
-                                                    child: const Text('View'),
-                                                  )
-                                                : const SizedBox(),
-                                            ),
-                                          ]);
-                                        }).toList(),
+                                              DataCell(Text(
+                                                submittedAt != null
+                                                  ? _formatDate(submittedAt)
+                                                  : '-',
+                                              )),
+                                              DataCell(
+                                                sub != null
+                                                  ? TextButton(
+                                                      onPressed: () {
+                                                        // TODO: View submission details
+                                                      },
+                                                      child: const Text('View'),
+                                                    )
+                                                  : const SizedBox(),
+                                              ),
+                                            ]);
+                                          }).toList(),
+                                        ),
                                       ),
                                     ),
                                   ],
@@ -154,5 +159,13 @@ class AdminAllSubmissionsPage extends StatelessWidget {
         );
       },
     );
+  }
+
+  String _formatDate(DateTime date) {
+    const months = [
+      '', 'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    return "${months[date.month]} ${date.day}, ${date.year}";
   }
 }

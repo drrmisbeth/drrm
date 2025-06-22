@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class AdminDashboardPage extends StatelessWidget {
   final VoidCallback? onToggleDarkMode;
@@ -7,13 +8,19 @@ class AdminDashboardPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     // Modern color scheme
     final Color orange = const Color(0xFFFF9800);
     final Color yellow = const Color(0xFFFFEB3B);
     final Color red = const Color(0xFFF44336);
     final Color accent = const Color(0xFFFEF3E2);
 
-    final colorScheme = Theme.of(context).colorScheme;
+    // Updated palette
+    final Color purple = const Color(0xFF7C6CB2);
+    final Color purpleBg = const Color(0xFFF8F3FB);
+    final Color cardBg = Colors.white;
+    final Color mainBg = accent;
+
     return LayoutBuilder(
       builder: (context, constraints) {
         final isMobile = constraints.maxWidth < 900;
@@ -34,11 +41,17 @@ class AdminDashboardPage extends StatelessWidget {
                     ),
                     const SizedBox(height: 24),
                     // Stat cards in column
-                    _statCard(
-                      color: orange,
-                      icon: Icons.school,
-                      value: '120',
-                      label: 'Schools',
+                    FutureBuilder<int>(
+                      future: _getSchoolCount(),
+                      builder: (context, snapshot) {
+                        final count = snapshot.hasData ? snapshot.data.toString() : '...';
+                        return _statCard(
+                          color: orange,
+                          icon: Icons.school,
+                          value: count,
+                          label: 'Schools',
+                        );
+                      },
                     ),
                     const SizedBox(height: 16),
                     _statCard(
@@ -70,23 +83,30 @@ class AdminDashboardPage extends StatelessWidget {
                       style: TextStyle(
                         fontWeight: FontWeight.w700,
                         fontSize: 18,
-                        color: Color(0xFF7C6CB2),
+                        color: purple,
                       ),
                     ),
                     const SizedBox(height: 12),
-                    _quickLink(
-                      icon: Icons.assignment_rounded,
-                      label: 'Submission Tasks',
-                      color: const Color(0xFF7C6CB2),
-                    ),
-                    const SizedBox(height: 10),
-                    _quickLink(
-                      icon: Icons.list_alt_rounded,
-                      label: 'All Submissions',
-                      color: const Color(0xFF7C6CB2),
+                    Row(
+                      children: [
+                        _quickLink(
+                          icon: Icons.assignment_rounded,
+                          label: 'Submission Tasks',
+                          color: purple,
+                          background: purpleBg,
+                        ),
+                        const SizedBox(width: 10),
+                        _quickLink(
+                          icon: Icons.list_alt_rounded,
+                          label: 'All Submissions',
+                          color: purple,
+                          background: purpleBg,
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 24),
                     _infoCard(
+                      background: cardBg,
                       child: Padding(
                         padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 24),
                         child: Column(
@@ -94,14 +114,14 @@ class AdminDashboardPage extends StatelessWidget {
                           children: [
                             Row(
                               children: [
-                                Icon(Icons.event_note, color: Color(0xFF7C6CB2)),
+                                Icon(Icons.event_note, color: purple),
                                 const SizedBox(width: 8),
                                 Text(
                                   'Upcoming Drills',
                                   style: TextStyle(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 17,
-                                    color: Color(0xFF7C6CB2),
+                                    color: purple,
                                   ),
                                 ),
                               ],
@@ -116,7 +136,7 @@ class AdminDashboardPage extends StatelessWidget {
                       ),
                     ),
                     _infoCard(
-                      color: const Color(0xFFF8F3FB),
+                      background: purpleBg,
                       child: Padding(
                         padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 24),
                         child: Column(
@@ -127,7 +147,7 @@ class AdminDashboardPage extends StatelessWidget {
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 17,
-                                color: Color(0xFF7C6CB2),
+                                color: purple,
                               ),
                             ),
                             const SizedBox(height: 18),
@@ -154,6 +174,7 @@ class AdminDashboardPage extends StatelessWidget {
                       ),
                     ),
                     _infoCard(
+                      background: cardBg,
                       child: Padding(
                         padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 24),
                         child: Column(
@@ -161,14 +182,14 @@ class AdminDashboardPage extends StatelessWidget {
                           children: [
                             Row(
                               children: [
-                                Icon(Icons.assignment, color: Color(0xFF7C6CB2)),
+                                Icon(Icons.assignment, color: purple),
                                 const SizedBox(width: 8),
                                 Text(
                                   'Active Drill Tasks',
                                   style: TextStyle(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 16,
-                                    color: Color(0xFF7C6CB2),
+                                    color: purple,
                                   ),
                                 ),
                               ],
@@ -209,11 +230,17 @@ class AdminDashboardPage extends StatelessWidget {
                               spacing: 24,
                               runSpacing: 18,
                               children: [
-                                _statCard(
-                                  color: orange,
-                                  icon: Icons.school,
-                                  value: '120',
-                                  label: 'Schools',
+                                FutureBuilder<int>(
+                                  future: _getSchoolCount(),
+                                  builder: (context, snapshot) {
+                                    final count = snapshot.hasData ? snapshot.data.toString() : '...';
+                                    return _statCard(
+                                      color: orange,
+                                      icon: Icons.school,
+                                      value: count,
+                                      label: 'Schools',
+                                    );
+                                  },
                                 ),
                                 _statCard(
                                   color: yellow,
@@ -245,7 +272,7 @@ class AdminDashboardPage extends StatelessWidget {
                               style: TextStyle(
                                 fontWeight: FontWeight.w700,
                                 fontSize: 18,
-                                color: Color(0xFF7C6CB2),
+                                color: purple,
                               ),
                             ),
                             const SizedBox(height: 18),
@@ -254,13 +281,15 @@ class AdminDashboardPage extends StatelessWidget {
                                 _quickLink(
                                   icon: Icons.assignment_rounded,
                                   label: 'Submission Tasks',
-                                  color: const Color(0xFF7C6CB2),
+                                  color: purple,
+                                  background: purpleBg,
                                 ),
                                 const SizedBox(width: 18),
                                 _quickLink(
                                   icon: Icons.list_alt_rounded,
                                   label: 'All Submissions',
-                                  color: const Color(0xFF7C6CB2),
+                                  color: purple,
+                                  background: purpleBg,
                                 ),
                               ],
                             ),
@@ -277,6 +306,7 @@ class AdminDashboardPage extends StatelessWidget {
                             children: [
                               Expanded(
                                 child: _infoCard(
+                                  background: cardBg,
                                   child: Padding(
                                     padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 24),
                                     child: Column(
@@ -284,14 +314,14 @@ class AdminDashboardPage extends StatelessWidget {
                                       children: [
                                         Row(
                                           children: [
-                                            Icon(Icons.event_note, color: Color(0xFF7C6CB2)),
+                                            Icon(Icons.event_note, color: purple),
                                             const SizedBox(width: 8),
                                             Text(
                                               'Upcoming Drills',
                                               style: TextStyle(
                                                 fontWeight: FontWeight.bold,
                                                 fontSize: 17,
-                                                color: Color(0xFF7C6CB2),
+                                                color: purple,
                                               ),
                                             ),
                                           ],
@@ -310,7 +340,7 @@ class AdminDashboardPage extends StatelessWidget {
                           ),
                           const SizedBox(height: 22),
                           _infoCard(
-                            color: const Color(0xFFF8F3FB),
+                            background: purpleBg,
                             child: Padding(
                               padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 24),
                               child: Column(
@@ -321,7 +351,7 @@ class AdminDashboardPage extends StatelessWidget {
                                     style: TextStyle(
                                       fontWeight: FontWeight.bold,
                                       fontSize: 17,
-                                      color: Color(0xFF7C6CB2),
+                                      color: purple,
                                     ),
                                   ),
                                   const SizedBox(height: 18),
@@ -349,6 +379,7 @@ class AdminDashboardPage extends StatelessWidget {
                           ),
                           const SizedBox(height: 22),
                           _infoCard(
+                            background: cardBg,
                             child: Padding(
                               padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 24),
                               child: Column(
@@ -356,14 +387,14 @@ class AdminDashboardPage extends StatelessWidget {
                                 children: [
                                   Row(
                                     children: [
-                                      Icon(Icons.assignment, color: Color(0xFF7C6CB2)),
+                                      Icon(Icons.assignment, color: purple),
                                       const SizedBox(width: 8),
                                       Text(
                                         'Active Drill Tasks',
                                         style: TextStyle(
                                           fontWeight: FontWeight.bold,
                                           fontSize: 16,
-                                          color: Color(0xFF7C6CB2),
+                                          color: purple,
                                         ),
                                       ),
                                     ],
@@ -458,11 +489,12 @@ class AdminDashboardPage extends StatelessWidget {
     required IconData icon,
     required String label,
     required Color color,
+    Color? background,
   }) {
     return ElevatedButton.icon(
       style: ElevatedButton.styleFrom(
         elevation: 0,
-        backgroundColor: color.withOpacity(0.13),
+        backgroundColor: background ?? color.withOpacity(0.13),
         foregroundColor: color,
         padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
         shape: StadiumBorder(),
@@ -475,11 +507,11 @@ class AdminDashboardPage extends StatelessWidget {
     );
   }
 
-  Widget _infoCard({required Widget child, Color? color}) {
+  Widget _infoCard({required Widget child, Color? background}) {
     return Container(
       margin: const EdgeInsets.only(bottom: 18),
       decoration: BoxDecoration(
-        color: color ?? Colors.white,
+        color: background ?? Colors.white,
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
@@ -519,5 +551,14 @@ class AdminDashboardPage extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  // Helper to get school count
+  Future<int> _getSchoolCount() async {
+    final snap = await FirebaseFirestore.instance
+        .collection('users')
+        .where('role', isEqualTo: 'school')
+        .get();
+    return snap.docs.length;
   }
 }

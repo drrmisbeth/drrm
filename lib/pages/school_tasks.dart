@@ -48,117 +48,109 @@ class SchoolTasksPage extends StatelessWidget {
                       if (docs.isEmpty) {
                         return const Text('No tasks.');
                       }
-                      return Wrap(
-                        spacing: isMobile ? 0 : 24,
-                        runSpacing: 24,
-                        alignment: WrapAlignment.center,
-                        children: docs.map((doc) {
-                          final task = doc.data() as Map<String, dynamic>;
-                          final deadline = (task['deadline'] as Timestamp?)?.toDate();
-                          final isActive = task['active'] ?? true;
-                          IconData icon;
-                          Color iconBg;
-                          switch ((task['type'] as String).toLowerCase()) {
-                            case 'earthquake':
-                              icon = Icons.public;
-                              iconBg = colorScheme.primary;
-                              break;
-                            case 'fire':
-                              icon = Icons.local_fire_department;
-                              iconBg = colorScheme.error;
-                              break;
-                            default:
-                              icon = Icons.warning_amber;
-                              iconBg = colorScheme.secondary;
-                          }
-                          return Container(
-                            width: isMobile ? double.infinity : 400,
-                            constraints: BoxConstraints(
-                              maxWidth: 500,
-                              minWidth: isMobile ? 0 : 300,
-                            ),
-                            child: Card(
-                              elevation: 0,
-                              color: colorScheme.secondary.withOpacity(isActive ? 0.13 : 0.08),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 28),
-                                child: Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
+                      // Table type display
+                      return SizedBox(
+                        width: double.infinity,
+                        child: DataTable(
+                          columnSpacing: isMobile ? 8 : 24,
+                          dataRowMinHeight: 44,
+                          columns: const [
+                            DataColumn(label: Text('Type', style: TextStyle(fontWeight: FontWeight.bold))),
+                            DataColumn(label: Text('Frequency', style: TextStyle(fontWeight: FontWeight.bold))),
+                            DataColumn(label: Text('Deadline', style: TextStyle(fontWeight: FontWeight.bold))),
+                            DataColumn(label: Text('Drill Date', style: TextStyle(fontWeight: FontWeight.bold))),
+                            DataColumn(label: Text('Status', style: TextStyle(fontWeight: FontWeight.bold))),
+                            DataColumn(label: Text('Action', style: TextStyle(fontWeight: FontWeight.bold))),
+                          ],
+                          rows: docs.map((doc) {
+                            final task = doc.data() as Map<String, dynamic>;
+                            final deadline = (task['deadline'] as Timestamp?)?.toDate();
+                            final drillDate = (task['drillDate'] as Timestamp?)?.toDate();
+                            final isActive = task['active'] ?? true;
+                            IconData icon;
+                            Color iconBg;
+                            switch ((task['type'] as String).toLowerCase()) {
+                              case 'earthquake':
+                                icon = Icons.public;
+                                iconBg = colorScheme.primary;
+                                break;
+                              case 'fire':
+                                icon = Icons.local_fire_department;
+                                iconBg = colorScheme.error;
+                                break;
+                              default:
+                                icon = Icons.warning_amber;
+                                iconBg = colorScheme.secondary;
+                            }
+                            return DataRow(
+                              cells: [
+                                DataCell(Row(
                                   children: [
                                     CircleAvatar(
                                       backgroundColor: iconBg,
-                                      child: Icon(icon, color: Colors.white, size: 38),
-                                      radius: 36,
+                                      child: Icon(icon, color: Colors.white, size: 22),
+                                      radius: 16,
                                     ),
-                                    const SizedBox(width: 28),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Row(
-                                            children: [
-                                              Flexible(
-                                                child: Text(
-                                                  task['type'] ?? '',
-                                                  style: TextStyle(
-                                                    fontWeight: FontWeight.bold,
-                                                    fontSize:
-                                                    color: Colors.black,
-                                                  ),
-                                                  overflow: TextOverflow.ellipsis,
-                                                ),
-                                              ),
-                                              const SizedBox(width: 10),
-                                              if (!isActive)
-                                                Chip(
-                                                  label: const Text('Inactive'),
-                                                  backgroundColor: Colors.grey[300],
-                                                  labelStyle: const TextStyle(color: Colors.black54, fontSize: 12),
-                                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
-                                                ),
-                                            ],
-                                          ),
-                                          Text(
-                                            'Type: ${task['frequency'] ?? ''}',
-                                            style: TextStyle(color: Colors.grey[700], fontSize: 15),
-                                          ),
-                                          Text(
-                                            'Due: ${deadline != null ? "${deadline.year}-${deadline.month.toString().padLeft(2, '0')}-${deadline.day.toString().padLeft(2, '0')}" : "N/A"}',
-                                            style: TextStyle(color: Colors.grey[600], fontSize: 13),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    if (!isMobile)
-                                      const SizedBox(width: 16),
-                                    ElevatedButton.icon(
-                                      style: ElevatedButton.styleFrom(
-                                        shape: const StadiumBorder(),
-                                        backgroundColor: colorScheme.primary,
-                                        foregroundColor: Colors.white,
-                                        padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
-                                        textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                                        elevation: 0,
-                                      ),
-                                      onPressed: isActive
-                                          ? () {
-                                              Navigator.of(context).push(
-                                                MaterialPageRoute(
-                                                  builder: (_) => SchoolSubmitFormPage(taskId: doc.id),
-                                                ),
-                                              );
-                                            }
-                                          : null,
-                                      icon: const Icon(Icons.upload_rounded, size: 22),
-                                      label: const Text('Submit'),
-                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(task['type'] ?? '', style: const TextStyle(fontWeight: FontWeight.w600)),
                                   ],
+                                )),
+                                DataCell(Text(task['frequency'] ?? '')),
+                                DataCell(Text(
+                                  deadline != null
+                                      ? "${_formatDate(deadline)}"
+                                      : "N/A",
+                                )),
+                                DataCell(Text(
+                                  drillDate != null
+                                      ? "${_formatDate(drillDate)}"
+                                      : "N/A",
+                                )),
+                                DataCell(
+                                  isActive
+                                      ? Chip(
+                                          label: const Text('Active'),
+                                          backgroundColor: colorScheme.primary.withOpacity(0.18),
+                                          labelStyle: TextStyle(
+                                            color: colorScheme.primary,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+                                        )
+                                      : Chip(
+                                          label: const Text('Inactive'),
+                                          backgroundColor: Colors.grey[300],
+                                          labelStyle: const TextStyle(color: Colors.black54, fontSize: 12),
+                                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+                                        ),
                                 ),
-                              ),
-                            ),
-                          );
-                        }).toList(),
+                                DataCell(
+                                  ElevatedButton.icon(
+                                    style: ElevatedButton.styleFrom(
+                                      shape: const StadiumBorder(),
+                                      backgroundColor: colorScheme.primary,
+                                      foregroundColor: Colors.white,
+                                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                                      textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                                      elevation: 0,
+                                    ),
+                                    onPressed: isActive
+                                        ? () {
+                                            Navigator.of(context).push(
+                                              MaterialPageRoute(
+                                                builder: (_) => SchoolSubmitFormPage(taskId: doc.id),
+                                              ),
+                                            );
+                                          }
+                                        : null,
+                                    icon: const Icon(Icons.upload_rounded, size: 20),
+                                    label: const Text('Submit'),
+                                  ),
+                                ),
+                              ],
+                            );
+                          }).toList(),
+                        ),
                       );
                     },
                   ),
@@ -942,4 +934,15 @@ class _SchoolSubmitFormPageState extends State<SchoolSubmitFormPage> {
       ),
     );
   }
+
+  // (No helper function here)
+}
+
+// Add this helper function as a top-level function
+String _formatDate(DateTime date) {
+  const months = [
+    '', 'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ];
+  return "${months[date.month]} ${date.day}, ${date.year}";
 }

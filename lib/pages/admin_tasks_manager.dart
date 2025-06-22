@@ -15,7 +15,19 @@ class _AdminTasksManagerPageState extends State<AdminTasksManagerPage> {
   final _drillTypeController = TextEditingController();
   String? _selectedFrequency;
   DateTime? _deadline;
+  DateTime? _drillDate;
   bool _taskActive = true;
+
+  // UI state for add menu
+  bool _showAddMenu = false;
+
+  // Filter/sort/search state
+  String _searchText = '';
+  String? _filterFrequency;
+  String? _filterActive;
+  String? _filterYear; // <-- Add this line
+  String _sortField = 'deadline';
+  bool _sortAsc = true;
 
   void _pickDeadline() async {
     final picked = await showDatePicker(
@@ -31,12 +43,28 @@ class _AdminTasksManagerPageState extends State<AdminTasksManagerPage> {
     }
   }
 
+  // Add drill date picker
+  void _pickDrillDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _drillDate ?? DateTime.now(),
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2100),
+    );
+    if (picked != null) {
+      setState(() {
+        _drillDate = picked;
+      });
+    }
+  }
+
   Future<void> _addTask() async {
-    if (_drillTypeController.text.isEmpty || _selectedFrequency == null || _deadline == null) return;
+    if (_drillTypeController.text.isEmpty || _selectedFrequency == null || _deadline == null || _drillDate == null) return;
     await FirebaseFirestore.instance.collection('tasks').add({
       'type': _drillTypeController.text,
       'frequency': _selectedFrequency,
       'deadline': Timestamp.fromDate(_deadline!),
+      'drillDate': Timestamp.fromDate(_drillDate!), // <-- Add this line
       'active': true,
       'createdAt': FieldValue.serverTimestamp(),
     });
@@ -44,6 +72,7 @@ class _AdminTasksManagerPageState extends State<AdminTasksManagerPage> {
     setState(() {
       _selectedFrequency = null;
       _deadline = null;
+      _drillDate = null; // <-- Reset drill date
     });
   }
 
@@ -75,187 +104,522 @@ class _AdminTasksManagerPageState extends State<AdminTasksManagerPage> {
     return LayoutBuilder(
       builder: (context, constraints) {
         final isMobile = constraints.maxWidth < 700;
-        return Padding(
-          padding: EdgeInsets.symmetric(
-            horizontal: isMobile ? 8 : 32,
-            vertical: isMobile ? 8 : 32,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Submission Tasks Manager',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: isMobile ? 22 : 28,
-                  color: orange,
-                  letterSpacing: 1.1,
-                ),
-              ),
-              SizedBox(height: isMobile ? 18 : 32),
-              // Input Row
-              Flex(
-                direction: isMobile ? Axis.vertical : Axis.horizontal,
+        return Container(
+          width: double.infinity,
+          margin: EdgeInsets.zero, // Remove margin
+          padding: EdgeInsets.zero, // Remove padding
+          child: Card(
+            elevation: 2,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(0)), // Remove border radius
+            color: Colors.white,
+            margin: EdgeInsets.zero, // Remove card margin
+            child: Padding(
+              padding: EdgeInsets.zero, // Remove card padding
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                    flex: 3,
-                    child: Padding(
-                      padding: EdgeInsets.only(bottom: isMobile ? 10 : 0, right: isMobile ? 0 : 12),
-                      child: TextField(
-                        controller: _drillTypeController,
-                        decoration: InputDecoration(
-                          hintText: 'Drill Type (e.g. Earthquake)',
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(18)),
-                          contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 18),
-                          filled: true,
-                          fillColor: Colors.white,
+                  // --- Header Row with Add Task Toggle ---
+                  Row(
+                    children: [
+                      Text(
+                        'Submission Tasks Manager',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: isMobile ? 22 : 28,
+                          color: const Color(0xFFFF9800),
+                          letterSpacing: 1.1,
                         ),
                       ),
-                    ),
+                      const Spacer(),
+                      // Add Task toggle button
+                      ElevatedButton.icon(
+                        icon: Icon(_showAddMenu ? Icons.close : Icons.add_circle),
+                        label: Text(_showAddMenu ? 'Hide Add Task' : 'Add Task'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Theme.of(context).colorScheme.primary,
+                          foregroundColor: Colors.white,
+                          shape: StadiumBorder(),
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                        ),
+                        onPressed: () => setState(() => _showAddMenu = !_showAddMenu),
+                      ),
+                    ],
                   ),
-                  SizedBox(width: isMobile ? 0 : 12, height: isMobile ? 10 : 0),
-                  // Frequency buttons
-                  Expanded(
-                    flex: 4,
-                    child: Padding(
-                      padding: EdgeInsets.only(bottom: isMobile ? 10 : 0),
-                      child: Wrap(
-                        spacing: 8,
+                  // --- Add Task Menu ---
+                  if (_showAddMenu)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
+                      child: Flex(
+                        direction: isMobile ? Axis.vertical : Axis.horizontal,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          for (final freq in [
+                          Expanded(
+                            flex: 3,
+                            child: Padding(
+                              padding: EdgeInsets.only(bottom: isMobile ? 10 : 0, right: isMobile ? 0 : 12),
+                              child: TextField(
+                                controller: _drillTypeController,
+                                decoration: InputDecoration(
+                                  hintText: 'Drill Type (e.g. Earthquake)',
+                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(18)),
+                                  contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 18),
+                                  filled: true,
+                                  fillColor: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ),
+                          SizedBox(width: isMobile ? 0 : 12, height: isMobile ? 10 : 0),
+                          Padding(
+                            padding: EdgeInsets.only(bottom: isMobile ? 10 : 0),
+                            child: Wrap(
+                              spacing: 8,
+                              children: [
+                                for (final freq in [
+                                  '1st Quarter',
+                                  '2nd Quarter',
+                                  '3rd Quarter',
+                                  '4th Quarter',
+                                  'Monthly Unannounced'
+                                ])
+                                  ChoiceChip(
+                                    label: Text(freq, style: TextStyle(fontSize: isMobile ? 12 : 14)),
+                                    selected: _selectedFrequency == freq,
+                                    onSelected: (selected) {
+                                      setState(() {
+                                        _selectedFrequency = selected ? freq : null;
+                                      });
+                                    },
+                                    selectedColor: Theme.of(context).colorScheme.primary.withOpacity(0.18),
+                                    backgroundColor: Colors.white,
+                                    labelStyle: TextStyle(
+                                      color: _selectedFrequency == freq
+                                          ? Theme.of(context).colorScheme.primary
+                                          : Colors.black87,
+                                      fontWeight: _selectedFrequency == freq ? FontWeight.bold : FontWeight.normal,
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                          SizedBox(width: isMobile ? 0 : 12, height: isMobile ? 10 : 0),
+                          TextButton(
+                            onPressed: _pickDeadline,
+                            style: TextButton.styleFrom(
+                              backgroundColor: Color(0xFFE7E1F3),
+                              foregroundColor: Color(0xFF7C6CB2),
+                              shape: StadiumBorder(),
+                              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                            ),
+                            child: Text(_deadline == null ? 'Pick Deadline' : 'Deadline: ${_deadline!.year}-${_deadline!.month.toString().padLeft(2, '0')}-${_deadline!.day.toString().padLeft(2, '0')}'),
+                          ),
+                          SizedBox(width: isMobile ? 0 : 12, height: isMobile ? 10 : 0),
+                          TextButton(
+                            onPressed: _pickDrillDate,
+                            style: TextButton.styleFrom(
+                              backgroundColor: Color(0xFFE7E1F3),
+                              foregroundColor: Color(0xFF7C6CB2),
+                              shape: StadiumBorder(),
+                              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                            ),
+                            child: Text(_drillDate == null
+                                ? 'Pick Drill Date'
+                                : 'Drill Date: ${_drillDate!.year}-${_drillDate!.month.toString().padLeft(2, '0')}-${_drillDate!.day.toString().padLeft(2, '0')}'),
+                          ),
+                          SizedBox(width: isMobile ? 0 : 12, height: isMobile ? 10 : 0),
+                          TextButton(
+                            onPressed: _addTask,
+                            style: TextButton.styleFrom(
+                              backgroundColor: Color(0xFFF3EFFF),
+                              foregroundColor: Color(0xFF7C6CB2),
+                              shape: StadiumBorder(),
+                              padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
+                            ),
+                            child: const Text('Add'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  // --- Filter, Sort, Search Row ---
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                    child: Wrap(
+                      spacing: 12,
+                      runSpacing: 8,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        SizedBox(
+                          width: isMobile ? 160 : 220,
+                          child: TextField(
+                            decoration: InputDecoration(
+                              prefixIcon: const Icon(Icons.search),
+                              hintText: 'Search by type or frequency',
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+                              contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 12),
+                              isDense: true,
+                            ),
+                            onChanged: (v) => setState(() => _searchText = v.trim().toLowerCase()),
+                          ),
+                        ),
+                        DropdownButton<String>(
+                          value: _filterFrequency,
+                          hint: const Text('Filter Frequency'),
+                          items: [
+                            null,
                             '1st Quarter',
                             '2nd Quarter',
                             '3rd Quarter',
                             '4th Quarter',
                             'Monthly Unannounced'
-                          ])
-                            ChoiceChip(
-                              label: Text(freq, style: TextStyle(fontSize: isMobile ? 12 : 14)),
-                              selected: _selectedFrequency == freq,
-                              onSelected: (selected) {
-                                setState(() {
-                                  _selectedFrequency = selected ? freq : null;
-                                });
-                              },
-                              selectedColor: colorScheme.primary.withOpacity(0.18),
-                              backgroundColor: Colors.white,
-                              labelStyle: TextStyle(
-                                color: _selectedFrequency == freq
-                                    ? colorScheme.primary
-                                    : Colors.black87,
-                                fontWeight: _selectedFrequency == freq ? FontWeight.bold : FontWeight.normal,
-                              ),
+                          ].map((e) => DropdownMenuItem(
+                            value: e,
+                            child: Text(e ?? 'All'),
+                          )).toList(),
+                          onChanged: (v) => setState(() => _filterFrequency = v),
+                        ),
+                        // --- Year Filter ---
+                        DropdownButton<String>(
+                          value: _filterYear,
+                          hint: const Text('Filter Year'),
+                          items: [
+                            null,
+                            ...List.generate(10, (i) => (DateTime.now().year - 5 + i).toString())
+                          ].map((e) => DropdownMenuItem(
+                            value: e,
+                            child: Text(e ?? 'All'),
+                          )).toList(),
+                          onChanged: (v) => setState(() => _filterYear = v),
+                        ),
+                        DropdownButton<String>(
+                          value: _filterActive,
+                          hint: const Text('Filter Status'),
+                          items: [
+                            null,
+                            'Active',
+                            'Inactive',
+                          ].map((e) => DropdownMenuItem(
+                            value: e,
+                            child: Text(e ?? 'All'),
+                          )).toList(),
+                          onChanged: (v) => setState(() => _filterActive = v),
+                        ),
+                        DropdownButton<String>(
+                          value: _sortField,
+                          items: [
+                            {'label': 'Deadline', 'value': 'deadline'},
+                            {'label': 'Drill Date', 'value': 'drillDate'},
+                            {'label': 'Type', 'value': 'type'},
+                          ].map((e) => DropdownMenuItem(
+                            value: e['value'],
+                            child: Text('Sort: ${e['label']}'),
+                          )).toList(),
+                          onChanged: (v) => setState(() => _sortField = v ?? 'deadline'),
+                        ),
+                        // Sort order toggle button with dynamic icon
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).colorScheme.primary.withOpacity(0.12),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: IconButton(
+                            icon: Icon(
+                              _sortAsc ? Icons.arrow_upward : Icons.arrow_downward, // <-- changes icon based on _sortAsc
+                              color: Theme.of(context).colorScheme.primary,
                             ),
-                        ],
-                      ),
+                            tooltip: 'Toggle sort order',
+                            onPressed: () => setState(() => _sortAsc = !_sortAsc),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  SizedBox(width: isMobile ? 0 : 12, height: isMobile ? 10 : 0),
-                  TextButton(
-                    onPressed: _pickDeadline,
-                    style: TextButton.styleFrom(
-                      backgroundColor: Color(0xFFE7E1F3),
-                      foregroundColor: Color(0xFF7C6CB2),
-                      shape: StadiumBorder(),
-                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-                    ),
-                    child: Text(_deadline == null ? 'Pick Deadline' : 'Deadline: ${_deadline!.toLocal()}'.split(' ')[0]),
-                  ),
-                  SizedBox(width: isMobile ? 0 : 12, height: isMobile ? 10 : 0),
-                  TextButton(
-                    onPressed: _addTask,
-                    style: TextButton.styleFrom(
-                      backgroundColor: Color(0xFFF3EFFF),
-                      foregroundColor: Color(0xFF7C6CB2),
-                      shape: StadiumBorder(),
-                      padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
-                    ),
-                    child: const Text('Add'),
+                  // --- Table for tasks ---
+                  StreamBuilder<QuerySnapshot>(
+                    stream: FirebaseFirestore.instance
+                        .collection('tasks')
+                        .snapshots(),
+                    builder: (context, snapshot) {
+                      if (!snapshot.hasData) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
+                      List<QueryDocumentSnapshot> docs = snapshot.data!.docs;
+
+                      // --- Filtering ---
+                      if (_searchText.isNotEmpty) {
+                        docs = docs.where((doc) {
+                          final task = doc.data() as Map<String, dynamic>;
+                          final type = (task['type'] ?? '').toString().toLowerCase();
+                          final freq = (task['frequency'] ?? '').toString().toLowerCase();
+                          return type.contains(_searchText) || freq.contains(_searchText);
+                        }).toList();
+                      }
+                      if (_filterFrequency != null) {
+                        docs = docs.where((doc) {
+                          final task = doc.data() as Map<String, dynamic>;
+                          return task['frequency'] == _filterFrequency;
+                        }).toList();
+                      }
+                      // --- Year filter ---
+                      if (_filterYear != null) {
+                        docs = docs.where((doc) {
+                          final task = doc.data() as Map<String, dynamic>;
+                          final deadline = (task['deadline'] as Timestamp?)?.toDate();
+                          return deadline != null && deadline.year.toString() == _filterYear;
+                        }).toList();
+                      }
+                      if (_filterActive != null) {
+                        docs = docs.where((doc) {
+                          final task = doc.data() as Map<String, dynamic>;
+                          final active = (task['active'] ?? true) == true;
+                          return _filterActive == 'Active' ? active : !active;
+                        }).toList();
+                      }
+
+                      // --- Sorting ---
+                      docs.sort((a, b) {
+                        final ta = a.data() as Map<String, dynamic>;
+                        final tb = b.data() as Map<String, dynamic>;
+                        int cmp;
+                        switch (_sortField) {
+                          case 'drillDate':
+                            final da = (ta['drillDate'] as Timestamp?)?.toDate();
+                            final db = (tb['drillDate'] as Timestamp?)?.toDate();
+                            cmp = (da ?? DateTime(2100)).compareTo(db ?? DateTime(2100));
+                            break;
+                          case 'type':
+                            cmp = (ta['type'] ?? '').toString().compareTo((tb['type'] ?? '').toString());
+                            break;
+                          case 'deadline':
+                          default:
+                            final da = (ta['deadline'] as Timestamp?)?.toDate();
+                            final db = (tb['deadline'] as Timestamp?)?.toDate();
+                            cmp = (da ?? DateTime(2100)).compareTo(db ?? DateTime(2100));
+                        }
+                        return _sortAsc ? cmp : -cmp;
+                      });
+
+                      if (docs.isEmpty) {
+                        return const Text('No tasks yet.');
+                      }
+                      return SizedBox(
+                        width: double.infinity,
+                        child: DataTable(
+                          columnSpacing: 28,
+                          dataRowMinHeight: 48,
+                          columns: const [
+                            DataColumn(label: Text('Type')),
+                            DataColumn(label: Text('Frequency')),
+                            DataColumn(label: Text('Deadline')),
+                            DataColumn(label: Text('Drill Date')),
+                            DataColumn(label: Text('Active')),
+                            DataColumn(label: Text('Actions')),
+                          ],
+                          rows: docs.map((doc) {
+                            final task = doc.data() as Map<String, dynamic>;
+                            final deadline = (task['deadline'] as Timestamp?)?.toDate();
+                            final drillDate = (task['drillDate'] as Timestamp?)?.toDate();
+                            return DataRow(
+                              cells: [
+                                DataCell(Text(task['type'] ?? '')),
+                                DataCell(Text(task['frequency'] ?? '')),
+                                DataCell(Text(
+                                  deadline != null
+                                      ? _formatDate(deadline)
+                                      : "N/A",
+                                )),
+                                DataCell(Text(
+                                  drillDate != null
+                                      ? _formatDate(drillDate)
+                                      : "N/A",
+                                )),
+                                DataCell(
+                                  Switch(
+                                    value: task['active'] ?? true,
+                                    onChanged: (val) => _toggleActive(doc.id, val),
+                                    activeColor: Color(0xFF7C6CB2),
+                                  ),
+                                ),
+                                DataCell(
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      IconButton(
+                                        icon: Icon(Icons.edit, color: Colors.blue),
+                                        tooltip: 'Edit Task',
+                                        onPressed: () async {
+                                          final task = doc.data() as Map<String, dynamic>;
+                                          final updated = await showDialog<Map<String, dynamic>>(
+                                            context: context,
+                                            builder: (context) {
+                                              final typeController = TextEditingController(text: task['type'] ?? '');
+                                              String? freq = task['frequency'];
+                                              DateTime? deadline = (task['deadline'] as Timestamp?)?.toDate();
+                                              DateTime? drillDate = (task['drillDate'] as Timestamp?)?.toDate();
+                                              bool active = task['active'] ?? true;
+                                              return AlertDialog(
+                                                title: const Text('Edit Task'),
+                                                content: StatefulBuilder(
+                                                  builder: (context, setState) => SingleChildScrollView(
+                                                    child: Column(
+                                                      mainAxisSize: MainAxisSize.min,
+                                                      children: [
+                                                        TextField(
+                                                          controller: typeController,
+                                                          decoration: const InputDecoration(labelText: 'Type'),
+                                                        ),
+                                                        const SizedBox(height: 8),
+                                                        DropdownButtonFormField<String>(
+                                                          value: freq,
+                                                          items: [
+                                                            '1st Quarter',
+                                                            '2nd Quarter',
+                                                            '3rd Quarter',
+                                                            '4th Quarter',
+                                                            'Monthly Unannounced'
+                                                          ].map((e) => DropdownMenuItem(
+                                                            value: e,
+                                                            child: Text(e),
+                                                          )).toList(),
+                                                          onChanged: (v) => setState(() => freq = v),
+                                                          decoration: const InputDecoration(labelText: 'Frequency'),
+                                                        ),
+                                                        const SizedBox(height: 8),
+                                                        Row(
+                                                          children: [
+                                                            Expanded(
+                                                              child: OutlinedButton.icon(
+                                                                icon: const Icon(Icons.event),
+                                                                label: Text(deadline == null
+                                                                    ? 'Pick Deadline'
+                                                                    : '${deadline?.year ?? ''}-${deadline?.month.toString().padLeft(2, '0') ?? ''}-${deadline?.day.toString().padLeft(2, '0') ?? ''}'),
+                                                                onPressed: () async {
+                                                                  final picked = await showDatePicker(
+                                                                    context: context,
+                                                                    initialDate: deadline ?? DateTime.now(),
+                                                                    firstDate: DateTime(2020),
+                                                                    lastDate: DateTime(2100),
+                                                                  );
+                                                                  if (picked != null) setState(() => deadline = picked);
+                                                                },
+                                                              ),
+                                                            ),
+                                                            const SizedBox(width: 8),
+                                                            Expanded(
+                                                              child: OutlinedButton.icon(
+                                                                icon: const Icon(Icons.event_available),
+                                                                label: Text(drillDate == null
+                                                                    ? 'Pick Drill Date'
+                                                                    : '${drillDate?.year ?? ''}-${drillDate?.month.toString().padLeft(2, '0') ?? ''}-${drillDate?.day.toString().padLeft(2, '0') ?? ''}'),
+                                                                onPressed: () async {
+                                                                  final picked = await showDatePicker(
+                                                                    context: context,
+                                                                    initialDate: drillDate ?? DateTime.now(),
+                                                                    firstDate: DateTime(2020),
+                                                                    lastDate: DateTime(2100),
+                                                                  );
+                                                                  if (picked != null) setState(() => drillDate = picked);
+                                                                },
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                        const SizedBox(height: 8),
+                                                        SwitchListTile(
+                                                          value: active,
+                                                          onChanged: (v) => setState(() => active = v),
+                                                          title: const Text('Active'),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                ),
+                                                actions: [
+                                                  TextButton(
+                                                    onPressed: () => Navigator.of(context).pop(),
+                                                    child: const Text('Cancel'),
+                                                  ),
+                                                  ElevatedButton(
+                                                    onPressed: () {
+                                                      Navigator.of(context).pop({
+                                                        'type': typeController.text,
+                                                        'frequency': freq,
+                                                        'deadline': deadline,
+                                                        'drillDate': drillDate,
+                                                        'active': active,
+                                                      });
+                                                    },
+                                                    child: const Text('Update'),
+                                                  ),
+                                                ],
+                                              );
+                                            },
+                                          );
+                                          if (updated != null) {
+                                            await FirebaseFirestore.instance.collection('tasks').doc(doc.id).update({
+                                              'type': updated['type'],
+                                              'frequency': updated['frequency'],
+                                              'deadline': updated['deadline'] != null ? Timestamp.fromDate(updated['deadline']) : null,
+                                              'drillDate': updated['drillDate'] != null ? Timestamp.fromDate(updated['drillDate']) : null,
+                                              'active': updated['active'],
+                                            });
+                                          }
+                                        },
+                                      ),
+                                      IconButton(
+                                        icon: Icon(Icons.delete, color: Colors.black54),
+                                        onPressed: () async {
+                                          final confirm = await showDialog<bool>(
+                                            context: context,
+                                            builder: (context) => AlertDialog(
+                                              title: const Text('Delete Task'),
+                                              content: const Text('Are you sure you want to delete this task? This action cannot be undone.'),
+                                              actions: [
+                                                TextButton(
+                                                  onPressed: () => Navigator.of(context).pop(false),
+                                                  child: const Text('Cancel'),
+                                                ),
+                                                TextButton(
+                                                  onPressed: () => Navigator.of(context).pop(true),
+                                                  child: const Text('Delete', style: TextStyle(color: Colors.red)),
+                                                ),
+                                              ],
+                                            ),
+                                          );
+                                          if (confirm == true) {
+                                            _deleteTask(doc.id);
+                                          }
+                                        },
+                                      ),
+                                      IconButton(
+                                        icon: Icon(Icons.visibility, color: Colors.blue),
+                                        tooltip: 'View Submissions',
+                                        onPressed: () => _viewSubmissions(doc.id, '${task['type']} (${task['frequency']})'),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            );
+                          }).toList(),
+                        ),
+                      );
+                    },
                   ),
                 ],
               ),
-              SizedBox(height: isMobile ? 18 : 32),
-              // Firestore task list
-              StreamBuilder<QuerySnapshot>(
-                stream: FirebaseFirestore.instance
-                    .collection('tasks')
-                    .orderBy('deadline')
-                    .snapshots(),
-                builder: (context, snapshot) {
-                  if (!snapshot.hasData) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-                  final docs = snapshot.data!.docs;
-                  if (docs.isEmpty) {
-                    return const Text('No tasks yet.');
-                  }
-                  return Column(
-                    children: docs.map((doc) {
-                      final task = doc.data() as Map<String, dynamic>;
-                      final deadline = (task['deadline'] as Timestamp?)?.toDate();
-                      return Container(
-                        margin: const EdgeInsets.only(bottom: 18),
-                        decoration: BoxDecoration(
-                          color: orange.withOpacity(0.09),
-                          borderRadius: BorderRadius.circular(28),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.grey.withOpacity(0.13),
-                              blurRadius: 18,
-                              offset: const Offset(0, 8),
-                            ),
-                          ],
-                        ),
-                        child: ListTile(
-                          leading: CircleAvatar(
-                            backgroundColor: orange.withOpacity(0.13),
-                            child: Icon(Icons.event_note, color: orange),
-                          ),
-                          title: Text(
-                            '${task['type']} (${task['frequency']})',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFF7C6CB2),
-                              fontSize: constraints.maxWidth < 700 ? 15 : 17,
-                            ),
-                          ),
-                          subtitle: Text(
-                            'Deadline: ${deadline != null ? "${deadline.year}-${deadline.month.toString().padLeft(2, '0')}-${deadline.day.toString().padLeft(2, '0')}" : "N/A"}',
-                            style: TextStyle(
-                              color: Colors.grey[700],
-                              fontSize: constraints.maxWidth < 700 ? 12 : 14,
-                            ),
-                          ),
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Switch(
-                                value: task['active'] ?? true,
-                                onChanged: (val) => _toggleActive(doc.id, val),
-                                activeColor: Color(0xFF7C6CB2),
-                              ),
-                              IconButton(
-                                icon: Icon(Icons.delete, color: Colors.black54),
-                                onPressed: () => _deleteTask(doc.id),
-                              ),
-                              IconButton(
-                                icon: Icon(Icons.visibility, color: Colors.blue),
-                                tooltip: 'View Submissions',
-                                onPressed: () => _viewSubmissions(doc.id, '${task['type']} (${task['frequency']})'),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                  );
-                },
-              ),
-            ],
+            ),
           ),
         );
       },
     );
+  }
+
+  String _formatDate(DateTime date) {
+    const months = [
+      '', 'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    return "${months[date.month]} ${date.day}, ${date.year}";
   }
 }
