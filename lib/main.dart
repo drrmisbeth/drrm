@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:supabase_flutter/supabase_flutter.dart'; // <-- Add this import
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'firebase_options.dart';
 import 'user_role.dart' as user_role;
 import 'app_shell.dart';
@@ -12,7 +12,6 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  // Initialize Supabase
   await Supabase.initialize(
     url: 'https://ievsphgbaytnfwbjyykn.supabase.co',
     anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlldnNpaGdiYXl0bmZ3Ymp5eWtuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk2OTA5OTEsImV4cCI6MjA2NTI2Njk5MX0.g1WzqHj5Xtys3GZUpQBwBaeTN25RB3DGEZilQqNujIE',
@@ -317,17 +316,6 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                     const SizedBox(height: 18),
-                    TextButton(
-                      onPressed: () {
-                        // TODO: Implement registration navigation
-                      },
-                      style: TextButton.styleFrom(
-                        foregroundColor: colorScheme.primary,
-                        textStyle: const TextStyle(fontSize: 15),
-                      ),
-                      child: const Text('No account? Register'),
-                    ),
-                    const SizedBox(height: 24),
                   ],
                 ),
               ),

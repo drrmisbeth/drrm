@@ -10,7 +10,7 @@ class SchoolHomePage extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     return Container(
-      color: Theme.of(context).scaffoldBackgroundColor,
+      color: Colors.white, // Content background is white
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
         child: Column(

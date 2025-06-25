@@ -3,8 +3,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'school_my_submissions.dart';
-// <-- Add this import
 
 class SchoolTasksPage extends StatelessWidget {
   final VoidCallback? onToggleDarkMode;
@@ -19,7 +17,7 @@ class SchoolTasksPage extends StatelessWidget {
         final isMobile = constraints.maxWidth < 700;
         return SingleChildScrollView(
           child: Container(
-            color: Theme.of(context).scaffoldBackgroundColor,
+            color: Colors.white, // Content background is white
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
               child: Column(
@@ -38,7 +36,7 @@ class SchoolTasksPage extends StatelessWidget {
                   StreamBuilder<QuerySnapshot>(
                     stream: FirebaseFirestore.instance
                         .collection('tasks')
-                        .orderBy('deadline')
+                        .where('active', isEqualTo: true) // Only show active tasks
                         .snapshots(),
                     builder: (context, snapshot) {
                       if (!snapshot.hasData) {
@@ -48,109 +46,164 @@ class SchoolTasksPage extends StatelessWidget {
                       if (docs.isEmpty) {
                         return const Text('No tasks.');
                       }
-                      // Table type display
-                      return SizedBox(
-                        width: double.infinity,
-                        child: DataTable(
-                          columnSpacing: isMobile ? 8 : 24,
-                          dataRowMinHeight: 44,
-                          columns: const [
-                            DataColumn(label: Text('Type', style: TextStyle(fontWeight: FontWeight.bold))),
-                            DataColumn(label: Text('Frequency', style: TextStyle(fontWeight: FontWeight.bold))),
-                            DataColumn(label: Text('Deadline', style: TextStyle(fontWeight: FontWeight.bold))),
-                            DataColumn(label: Text('Drill Date', style: TextStyle(fontWeight: FontWeight.bold))),
-                            DataColumn(label: Text('Status', style: TextStyle(fontWeight: FontWeight.bold))),
-                            DataColumn(label: Text('Action', style: TextStyle(fontWeight: FontWeight.bold))),
-                          ],
-                          rows: docs.map((doc) {
-                            final task = doc.data() as Map<String, dynamic>;
-                            final deadline = (task['deadline'] as Timestamp?)?.toDate();
-                            final drillDate = (task['drillDate'] as Timestamp?)?.toDate();
-                            final isActive = task['active'] ?? true;
-                            IconData icon;
-                            Color iconBg;
-                            switch ((task['type'] as String).toLowerCase()) {
-                              case 'earthquake':
-                                icon = Icons.public;
-                                iconBg = colorScheme.primary;
-                                break;
-                              case 'fire':
-                                icon = Icons.local_fire_department;
-                                iconBg = colorScheme.error;
-                                break;
-                              default:
-                                icon = Icons.warning_amber;
-                                iconBg = colorScheme.secondary;
-                            }
-                            return DataRow(
-                              cells: [
-                                DataCell(Row(
-                                  children: [
-                                    CircleAvatar(
-                                      backgroundColor: iconBg,
-                                      child: Icon(icon, color: Colors.white, size: 22),
-                                      radius: 16,
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Text(task['type'] ?? '', style: const TextStyle(fontWeight: FontWeight.w600)),
-                                  ],
-                                )),
-                                DataCell(Text(task['frequency'] ?? '')),
-                                DataCell(Text(
-                                  deadline != null
-                                      ? "${_formatDate(deadline)}"
-                                      : "N/A",
-                                )),
-                                DataCell(Text(
-                                  drillDate != null
-                                      ? "${_formatDate(drillDate)}"
-                                      : "N/A",
-                                )),
-                                DataCell(
-                                  isActive
-                                      ? Chip(
-                                          label: const Text('Active'),
-                                          backgroundColor: colorScheme.primary.withOpacity(0.18),
-                                          labelStyle: TextStyle(
-                                            color: colorScheme.primary,
-                                            fontWeight: FontWeight.w700,
-                                          ),
-                                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
-                                        )
-                                      : Chip(
-                                          label: const Text('Inactive'),
-                                          backgroundColor: Colors.grey[300],
-                                          labelStyle: const TextStyle(color: Colors.black54, fontSize: 12),
-                                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
-                                        ),
-                                ),
-                                DataCell(
-                                  ElevatedButton.icon(
-                                    style: ElevatedButton.styleFrom(
-                                      shape: const StadiumBorder(),
-                                      backgroundColor: colorScheme.primary,
-                                      foregroundColor: Colors.white,
-                                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-                                      textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-                                      elevation: 0,
-                                    ),
-                                    onPressed: isActive
-                                        ? () {
-                                            Navigator.of(context).push(
-                                              MaterialPageRoute(
-                                                builder: (_) => SchoolSubmitFormPage(taskId: doc.id),
-                                              ),
-                                            );
-                                          }
-                                        : null,
-                                    icon: const Icon(Icons.upload_rounded, size: 20),
-                                    label: const Text('Submit'),
-                                  ),
-                                ),
+                      final user = FirebaseAuth.instance.currentUser;
+                      return StreamBuilder<QuerySnapshot>(
+                        stream: FirebaseFirestore.instance
+                            .collection('submissions')
+                            .where('schoolId', isEqualTo: user?.uid)
+                            .snapshots(),
+                        builder: (context, subSnap) {
+                          if (!subSnap.hasData) {
+                            return const Center(child: CircularProgressIndicator());
+                          }
+                          final submissions = subSnap.data!.docs;
+                          final submittedTaskIds = submissions
+                              .map((s) => s['taskId'] as String?)
+                              .where((id) => id != null)
+                              .toSet();
+
+                          return SizedBox(
+                            width: double.infinity,
+                            child: DataTable(
+                              columnSpacing: isMobile ? 8 : 24,
+                              dataRowMinHeight: 44,
+                              columns: const [
+                                DataColumn(label: Text('Type', style: TextStyle(fontWeight: FontWeight.bold))),
+                                DataColumn(label: Text('Frequency', style: TextStyle(fontWeight: FontWeight.bold))),
+                                DataColumn(label: Text('Deadline', style: TextStyle(fontWeight: FontWeight.bold))),
+                                DataColumn(label: Text('Drill Date', style: TextStyle(fontWeight: FontWeight.bold))),
+                                DataColumn(label: Text('Status', style: TextStyle(fontWeight: FontWeight.bold))),
+                                DataColumn(label: Text('Action', style: TextStyle(fontWeight: FontWeight.bold))),
                               ],
-                            );
-                          }).toList(),
-                        ),
+                              rows: docs.map((doc) {
+                                final task = doc.data() as Map<String, dynamic>;
+                                final deadline = (task['deadline'] as Timestamp?)?.toDate();
+                                final drillDate = (task['drillDate'] as Timestamp?)?.toDate();
+                                final isActive = task['active'] ?? true;
+                                IconData icon;
+                                Color iconBg;
+                                switch ((task['type'] as String).toLowerCase()) {
+                                  case 'earthquake':
+                                    icon = Icons.public;
+                                    iconBg = colorScheme.primary;
+                                    break;
+                                  case 'fire':
+                                    icon = Icons.local_fire_department;
+                                    iconBg = colorScheme.error;
+                                    break;
+                                  default:
+                                    icon = Icons.warning_amber;
+                                    iconBg = colorScheme.secondary;
+                                }
+                                final isSubmitted = submittedTaskIds.contains(doc.id);
+                                return DataRow(
+                                  cells: [
+                                    DataCell(Row(
+                                      children: [
+                                        CircleAvatar(
+                                          backgroundColor: iconBg,
+                                          child: Icon(icon, color: Colors.white, size: 22),
+                                          radius: 16,
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Text(task['type'] ?? '', style: const TextStyle(fontWeight: FontWeight.w600)),
+                                      ],
+                                    )),
+                                    DataCell(Text(task['frequency'] ?? '')),
+                                    DataCell(Text(
+                                      deadline != null
+                                          ? "${_formatDate(deadline)}"
+                                          : "N/A",
+                                    )),
+                                    DataCell(Text(
+                                      drillDate != null
+                                          ? "${_formatDate(drillDate)}"
+                                          : "N/A",
+                                    )),
+                                    DataCell(
+                                      isActive
+                                          ? Chip(
+                                              label: const Text('Active'),
+                                              backgroundColor: colorScheme.primary.withOpacity(0.18),
+                                              labelStyle: TextStyle(
+                                                color: colorScheme.primary,
+                                                fontWeight: FontWeight.w700,
+                                              ),
+                                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+                                            )
+                                          : Chip(
+                                              label: const Text('Inactive'),
+                                              backgroundColor: Colors.grey[300],
+                                              labelStyle: const TextStyle(color: Colors.black54, fontSize: 12),
+                                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+                                            ),
+                                    ),
+                                    DataCell(
+                                      isSubmitted
+                                          ? Row(
+                                              children: [
+                                                ElevatedButton.icon(
+                                                  style: ElevatedButton.styleFrom(
+                                                    shape: const StadiumBorder(),
+                                                    backgroundColor: Colors.grey[400],
+                                                    foregroundColor: Colors.white,
+                                                    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                                                    textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                                                    elevation: 0,
+                                                  ),
+                                                  onPressed: null,
+                                                  icon: const Icon(Icons.check, size: 20),
+                                                  label: const Text('Submitted'),
+                                                ),
+                                                const SizedBox(width: 8),
+                                                OutlinedButton.icon(
+                                                  style: OutlinedButton.styleFrom(
+                                                    shape: const StadiumBorder(),
+                                                    side: BorderSide(color: colorScheme.primary, width: 2),
+                                                    foregroundColor: colorScheme.primary,
+                                                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                                                    textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                                                  ),
+                                                  icon: const Icon(Icons.edit, size: 20),
+                                                  label: const Text('Edit'),
+                                                  onPressed: () {
+                                                    Navigator.of(context).push(
+                                                      MaterialPageRoute(
+                                                        builder: (_) => SchoolSubmitFormPage(taskId: doc.id),
+                                                      ),
+                                                    );
+                                                  },
+                                                ),
+                                              ],
+                                            )
+                                          : ElevatedButton.icon(
+                                              style: ElevatedButton.styleFrom(
+                                                shape: const StadiumBorder(),
+                                                backgroundColor: colorScheme.primary,
+                                                foregroundColor: Colors.white,
+                                                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                                                textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                                                elevation: 0,
+                                              ),
+                                              onPressed: isActive
+                                                  ? () {
+                                                      Navigator.of(context).push(
+                                                        MaterialPageRoute(
+                                                          builder: (_) => SchoolSubmitFormPage(taskId: doc.id),
+                                                        ),
+                                                      );
+                                                    }
+                                                  : null,
+                                              icon: const Icon(Icons.upload_rounded, size: 20),
+                                              label: const Text('Submit'),
+                                            ),
+                                    ),
+                                  ],
+                                );
+                              }).toList(),
+                            ),
+                          );
+                        },
                       );
                     },
                   ),
@@ -230,6 +283,72 @@ class _SchoolSubmitFormPageState extends State<SchoolSubmitFormPage> {
 
   // New: Controller for external links
   final TextEditingController linksController = TextEditingController();
+
+  // --- NEW: For edit mode ---
+  bool _loadingSubmission = true;
+  String? _submissionId; // For updating existing submission
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSubmissionIfExists();
+  }
+
+  Future<void> _loadSubmissionIfExists() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+    final snap = await FirebaseFirestore.instance
+        .collection('submissions')
+        .where('schoolId', isEqualTo: user.uid)
+        .where('taskId', isEqualTo: widget.taskId)
+        .limit(1)
+        .get();
+    if (snap.docs.isNotEmpty) {
+      final doc = snap.docs.first;
+      final data = doc.data();
+      _submissionId = doc.id;
+      // Pre-Drill
+      final Map<String, dynamic> pd = Map<String, dynamic>.from(data['preDrill'] ?? {});
+      for (final k in preDrill.keys) {
+        preDrill[k] = pd[k];
+      }
+      additionalRemarks.text = data['additionalRemarks'] ?? '';
+      // Actual Drill
+      final actual = data['actualDrill'] ?? {};
+      duckCoverHold = actual['duckCoverHold'];
+      conductedEvacuationDrill = actual['conductedEvacuationDrill'];
+      otherActivities.text = actual['otherActivities'] ?? '';
+      // Personnel
+      final personnel = data['personnel'] ?? {};
+      teachingPersonnelTotal.text = personnel['teachingTotal'] ?? '';
+      nonTeachingPersonnelTotal.text = personnel['nonTeachingTotal'] ?? '';
+      teachingPersonnelParticipated.text = personnel['teachingParticipated'] ?? '';
+      nonTeachingPersonnelParticipated.text = personnel['nonTeachingParticipated'] ?? '';
+      // Learners
+      final learners = data['learners'] ?? {};
+      learnersMale.text = learners['male'] ?? '';
+      learnersFemale.text = learners['female'] ?? '';
+      learnersIP.text = learners['ip'] ?? '';
+      learnersMuslim.text = learners['muslim'] ?? '';
+      learnersPWD.text = learners['pwd'] ?? '';
+      learnersParticipatedMale.text = learners['participatedMale'] ?? '';
+      learnersParticipatedFemale.text = learners['participatedFemale'] ?? '';
+      learnersParticipatedIP.text = learners['participatedIP'] ?? '';
+      learnersParticipatedMuslim.text = learners['participatedMuslim'] ?? '';
+      learnersParticipatedPWD.text = learners['participatedPWD'] ?? '';
+      // Post-Drill
+      final post = data['postDrill'] ?? {};
+      reviewedContingencyPlan = post['reviewedContingencyPlan'];
+      issuesConcerns.text = post['issuesConcerns'] ?? '';
+      // Attachments (do not pre-load files, but could show names if desired)
+      // External Links
+      final links = (data['externalLinks'] ?? []) as List<dynamic>;
+      linksController.text = links.join('\n');
+    }
+    setState(() {
+      _loadingSubmission = false;
+    });
+  }
 
   List<Widget> _buildStepContent(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -688,9 +807,11 @@ class _SchoolSubmitFormPageState extends State<SchoolSubmitFormPage> {
 
   Future<List<String>> _uploadFilesToSupabase(List<PlatformFile> files) async {
     final supabase = Supabase.instance.client;
+    final user = FirebaseAuth.instance.currentUser;
     List<String> urls = [];
     for (final file in files) {
-      final path = 'submissions/${DateTime.now().millisecondsSinceEpoch}_${file.name}';
+      // Prefix path with Firebase UID for organization
+      final path = '${user?.uid ?? "unknown"}/submissions/${DateTime.now().millisecondsSinceEpoch}_${file.name}';
       final res = await supabase.storage.from('attachments').uploadBinary(
         path,
         file.bytes!,
@@ -727,8 +848,8 @@ class _SchoolSubmitFormPageState extends State<SchoolSubmitFormPage> {
         .where((e) => e.isNotEmpty)
         .toList();
 
-    await FirebaseFirestore.instance.collection('submissions').add({
-      'schoolId': user.uid,
+    final submissionData = {
+      'schooluid': user.uid,
       'taskId': widget.taskId,
       'submittedAt': FieldValue.serverTimestamp(),
       'preDrill': preDrill,
@@ -763,13 +884,22 @@ class _SchoolSubmitFormPageState extends State<SchoolSubmitFormPage> {
       'attachments': fileUrls,
       'attachmentNames': _pickedFiles.map((f) => f.name).toList(),
       'externalLinks': links,
-    });
+    };
+
+    if (_submissionId != null) {
+      // Update existing submission
+      await FirebaseFirestore.instance
+          .collection('submissions')
+          .doc(_submissionId)
+          .update(submissionData);
+    } else {
+      // Add new submission
+      await FirebaseFirestore.instance.collection('submissions').add(submissionData);
+    }
+
     setState(() => _submitting = false);
     if (!mounted) return;
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => SchoolMySubmissionsPage(showSubmissionLink: true)),
-      (route) => false,
-    );
+    Navigator.of(context).pop();
     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Form submitted!')));
   }
 
@@ -777,6 +907,11 @@ class _SchoolSubmitFormPageState extends State<SchoolSubmitFormPage> {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final isMobile = MediaQuery.of(context).size.width < 700;
+    if (_loadingSubmission) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
     return Scaffold(
       appBar: AppBar(
         title: const Text('Submission Form'),
@@ -908,24 +1043,6 @@ class _SchoolSubmitFormPageState extends State<SchoolSubmitFormPage> {
                       maxLines: 3,
                     ),
                   ],
-                  // Add link to My Submissions after submit (if needed)
-                  if (_step == 3 && !_submitting)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 18),
-                      child: Row(
-                        children: [
-                          const Text('Want to view your submission?'),
-                          TextButton(
-                            onPressed: () {
-                              Navigator.of(context).pushReplacement(
-                                MaterialPageRoute(builder: (_) => SchoolMySubmissionsPage()),
-                              );
-                            },
-                            child: const Text('Go to My Submissions'),
-                          ),
-                        ],
-                      ),
-                    ),
                 ],
               ),
             ),

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class AdminAnnouncementsPage extends StatefulWidget {
   final VoidCallback? onToggleDarkMode;
@@ -15,34 +15,11 @@ class AdminAnnouncementsPage extends StatefulWidget {
 class _AdminAnnouncementsPageState extends State<AdminAnnouncementsPage> {
   final titleController = TextEditingController();
   final descController = TextEditingController();
-  DateTime? _startDate;
-  DateTime? _endDate;
   String? _category;
   String? _priority;
   bool _isImportant = false;
   PlatformFile? _attachment;
-  String? _attachmentUrl;
   bool _uploading = false;
-
-  Future<void> _pickStartDate() async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: _startDate ?? DateTime.now(),
-      firstDate: DateTime(2020),
-      lastDate: DateTime(2100),
-    );
-    if (picked != null) setState(() => _startDate = picked);
-  }
-
-  Future<void> _pickEndDate() async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: _endDate ?? DateTime.now(),
-      firstDate: DateTime(2020),
-      lastDate: DateTime(2100),
-    );
-    if (picked != null) setState(() => _endDate = picked);
-  }
 
   Future<void> _pickAttachment() async {
     final result = await FilePicker.platform.pickFiles(withData: true);
@@ -53,54 +30,41 @@ class _AdminAnnouncementsPageState extends State<AdminAnnouncementsPage> {
     }
   }
 
-  Future<String?> _uploadAttachmentToSupabase(PlatformFile file) async {
-    final supabase = Supabase.instance.client;
-    final path = 'announcements/${DateTime.now().millisecondsSinceEpoch}_${file.name}';
-    final response = await supabase.storage.from('attachments').uploadBinary(
-      path,
-      file.bytes!,
-      fileOptions: FileOptions(upsert: true),
-    );
-    if (response.isNotEmpty) {
-      final publicUrl = supabase.storage.from('attachments').getPublicUrl(path);
-      return publicUrl;
-    }
-    return null;
-  }
-
   Future<void> addAnnouncement() async {
     final title = titleController.text.trim();
     final desc = descController.text.trim();
     if (title.isEmpty || desc.isEmpty) return;
     setState(() => _uploading = true);
-    String? attachmentUrl;
-    if (_attachment != null) {
-      attachmentUrl = await _uploadAttachmentToSupabase(_attachment!);
+    try {
+      String? attachmentName;
+      if (_attachment != null) {
+        attachmentName = _attachment!.name;
+      }
+      final user = FirebaseAuth.instance.currentUser;
+      await FirebaseFirestore.instance.collection('announcements').add({
+        'title': title,
+        'description': desc,
+        'createdAt': FieldValue.serverTimestamp(),
+        'category': _category,
+        'priority': _priority,
+        'isImportant': _isImportant,
+        'attachmentName': attachmentName,
+        'createdBy': user?.uid,
+        'createdByEmail': user?.email,
+      });
+      titleController.clear();
+      descController.clear();
+      setState(() {
+        _category = null;
+        _priority = null;
+        _isImportant = false;
+        _attachment = null;
+      });
+    } finally {
+      setState(() {
+        _uploading = false;
+      });
     }
-    await FirebaseFirestore.instance.collection('announcements').add({
-      'title': title,
-      'description': desc,
-      'createdAt': FieldValue.serverTimestamp(),
-      'startDate': _startDate,
-      'endDate': _endDate,
-      'category': _category,
-      'priority': _priority,
-      'isImportant': _isImportant,
-      'attachmentUrl': attachmentUrl,
-      'attachmentName': _attachment?.name,
-    });
-    titleController.clear();
-    descController.clear();
-    setState(() {
-      _startDate = null;
-      _endDate = null;
-      _category = null;
-      _priority = null;
-      _isImportant = false;
-      _attachment = null;
-      _attachmentUrl = null;
-      _uploading = false;
-    });
   }
 
   @override
@@ -140,30 +104,6 @@ class _AdminAnnouncementsPageState extends State<AdminAnnouncementsPage> {
                           labelText: 'Description',
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
                         ),
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: OutlinedButton.icon(
-                              onPressed: _pickStartDate,
-                              icon: const Icon(Icons.date_range),
-                              label: Text(_startDate == null
-                                  ? 'Start Date'
-                                  : '${_startDate!.year}-${_startDate!.month.toString().padLeft(2, '0')}-${_startDate!.day.toString().padLeft(2, '0')}'),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: OutlinedButton.icon(
-                              onPressed: _pickEndDate,
-                              icon: const Icon(Icons.event_busy),
-                              label: Text(_endDate == null
-                                  ? 'End Date'
-                                  : '${_endDate!.year}-${_endDate!.month.toString().padLeft(2, '0')}-${_endDate!.day.toString().padLeft(2, '0')}'),
-                            ),
-                          ),
-                        ],
                       ),
                       const SizedBox(height: 8),
                       Row(
@@ -260,28 +200,6 @@ class _AdminAnnouncementsPageState extends State<AdminAnnouncementsPage> {
                       const SizedBox(width: 12),
                       Expanded(
                         flex: 2,
-                        child: OutlinedButton.icon(
-                          onPressed: _pickStartDate,
-                          icon: const Icon(Icons.date_range),
-                          label: Text(_startDate == null
-                              ? 'Start Date'
-                              : '${_startDate!.year}-${_startDate!.month.toString().padLeft(2, '0')}-${_startDate!.day.toString().padLeft(2, '0')}'),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        flex: 2,
-                        child: OutlinedButton.icon(
-                          onPressed: _pickEndDate,
-                          icon: const Icon(Icons.event_busy),
-                          label: Text(_endDate == null
-                              ? 'End Date'
-                              : '${_endDate!.year}-${_endDate!.month.toString().padLeft(2, '0')}-${_endDate!.day.toString().padLeft(2, '0')}'),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        flex: 2,
                         child: DropdownButtonFormField<String>(
                           value: _category,
                           items: ['Maintenance', 'Event', 'Update', 'Other']
@@ -342,15 +260,13 @@ class _AdminAnnouncementsPageState extends State<AdminAnnouncementsPage> {
                     ],
                   ),
           ),
+          // Show announcements from Firestore
           StreamBuilder<QuerySnapshot>(
             stream: FirebaseFirestore.instance
                 .collection('announcements')
                 .orderBy('createdAt', descending: true)
                 .snapshots(),
             builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
-              }
               if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
                 return const Padding(
                   padding: EdgeInsets.all(24),
@@ -364,7 +280,7 @@ class _AdminAnnouncementsPageState extends State<AdminAnnouncementsPage> {
                   return Padding(
                     padding: EdgeInsets.symmetric(horizontal: isMobile ? 8 : 24, vertical: 6),
                     child: Material(
-                      elevation: 0, // Remove shadow
+                      elevation: 0,
                       borderRadius: BorderRadius.circular(24),
                       color: colorScheme.secondary.withOpacity(0.13),
                       child: ListTile(
@@ -384,16 +300,9 @@ class _AdminAnnouncementsPageState extends State<AdminAnnouncementsPage> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             IconButton(
-                              icon: const Icon(Icons.edit, size: 20),
-                              onPressed: () {
-                                // Optionally implement edit functionality
-                              },
-                            ),
-                            IconButton(
                               icon: const Icon(Icons.delete, size: 20),
                               onPressed: () async {
-                                await doc.reference.delete();
-                                setState(() {});
+                                await FirebaseFirestore.instance.collection('announcements').doc(doc.id).delete();
                               },
                             ),
                           ],

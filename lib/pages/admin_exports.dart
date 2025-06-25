@@ -15,7 +15,7 @@ class AdminExportsPage extends StatelessWidget {
           child: Padding(
             padding: EdgeInsets.all(isMobile ? 8 : 24),
             child: Card(
-              color: colorScheme.secondary.withOpacity(0.13),
+              color: Colors.white, // Content background is white
               elevation: 7,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
               child: Padding(

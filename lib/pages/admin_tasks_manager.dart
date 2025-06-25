@@ -1,6 +1,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'admin_task_submissions.dart';
+import 'dart:io';
+import 'dart:typed_data';
+import 'dart:convert';
+import 'package:csv/csv.dart';
+import 'package:file_saver/file_saver.dart';
+import 'package:flutter/services.dart' show rootBundle;
 
 class AdminTasksManagerPage extends StatefulWidget {
   final VoidCallback? onToggleDarkMode;
@@ -28,6 +34,7 @@ class _AdminTasksManagerPageState extends State<AdminTasksManagerPage> {
   String? _filterYear; // <-- Add this line
   String _sortField = 'deadline';
   bool _sortAsc = true;
+  bool _showArchived = false; // Toggle for showing archived tasks
 
   void _pickDeadline() async {
     final picked = await showDatePicker(
@@ -64,19 +71,27 @@ class _AdminTasksManagerPageState extends State<AdminTasksManagerPage> {
       'type': _drillTypeController.text,
       'frequency': _selectedFrequency,
       'deadline': Timestamp.fromDate(_deadline!),
-      'drillDate': Timestamp.fromDate(_drillDate!), // <-- Add this line
+      'drillDate': Timestamp.fromDate(_drillDate!),
       'active': true,
+      'archived': false, // <-- Ensure archived is set on creation
       'createdAt': FieldValue.serverTimestamp(),
     });
     _drillTypeController.clear();
     setState(() {
       _selectedFrequency = null;
       _deadline = null;
-      _drillDate = null; // <-- Reset drill date
+      _drillDate = null;
     });
   }
 
   Future<void> _toggleActive(String docId, bool value) async {
+    // Prevent activating if archived
+    final doc = await FirebaseFirestore.instance.collection('tasks').doc(docId).get();
+    final data = doc.data() as Map<String, dynamic>?;
+    if (data != null && (data['archived'] ?? false) == true && value == true) {
+      // Do not allow activating archived tasks
+      return;
+    }
     await FirebaseFirestore.instance.collection('tasks').doc(docId).update({'active': value});
   }
 
@@ -90,6 +105,202 @@ class _AdminTasksManagerPageState extends State<AdminTasksManagerPage> {
         builder: (_) => AdminTaskSubmissionsPage(taskId: taskId, taskTitle: taskTitle),
       ),
     );
+  }
+
+  // CSV template header as a string (first 8 lines of your template)
+  static const String _csvTemplateHeader = '''
+,,,REPUBLIC OF THE PHILIPPINES,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,DEPARTMENT OF EDUCATION,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,"SCHOOLS CONSOLIDATED REPORT ON THE CONDUCT OF QUARTERY NATIONWIDE SIMULTANEOUS EARTHQUAKE DRILL
+(DepEd Order No. 53, s. 2022)",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+No.,SCHOOL ID,SCHOOL NAME,PRE-DRILL,,,,,,,,,,,,,,ACTUAL DRILL,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,POST-DRILL,,Common issues and concerns encountered during the actual conduct of drill,"LINK FOR DOCUMENTATION
+(documentation)
+
+Google Drive Link"
+,,,With available Go Bags?,"With updated preparedness, evacuation and response plans?",With updated contingency plan?,With available early warning system?,With available emergency and rescue equipment?,With available First Aid Kits?,"With available communication equipment (internet, cellphone, two-way radio, etc.)?","With sufficient space in school/classrooms to conduct the ""Duck, Cover, and Hold""",Conducted coordination/preparatory meeting with LDRRMO/BDRRMCs?,Conducted an orientation to learners and school personnel on earthquake preparedness measures and the conduct of earthquake and fire drills?,Conducted an orientation to parents on earthquake preparedness measures and the conduct of earthquake and fire drills?,Learners have accomplished the Family Earthquake Preparedness Homework?,"Conducted alternative activities and/or Information, Education and Communication (IEC) campaigns on earthquake preparedness and fire prevention?",Additional Remarks,"Conducted ""DUCK, COVER, and HOLD""?",Conducted evacuation drill?,Additional Remarks,"No. of Personnel
+(Total Population)",,,"No. of Personnel Participated
+(Partipation Head Count)",,,No. of Learners (Total Population),,,,,,,,,,,,,No. of Learners Participated (Participation Head Count),,,,,,,,,,,,,,Conduct of post-activity exercises,Additional Remarks,,
+''';
+
+  Future<void> _exportSubmissions(String taskId, String taskTitle) async {
+    try {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Exporting submissions...')),
+      );
+
+      final submissionsSnap = await FirebaseFirestore.instance
+          .collection('submissions')
+          .where('taskId', isEqualTo: taskId)
+          .get();
+
+      if (submissionsSnap.docs.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No submissions to export.')),
+        );
+        return;
+      }
+
+      // --- 1. Collect all fields and their prefixes ---
+      Set<String> fieldSet = {};
+      Map<String, String> fieldKeyToHeader = {};
+      Map<String, String> fieldKeyToPrefix = {};
+      Set<String> userUids = {};
+      for (final doc in submissionsSnap.docs) {
+        final data = doc.data() as Map<String, dynamic>;
+        if (data['schooluid'] != null) userUids.add(data['schooluid']);
+        void collectKeys(Map<String, dynamic> map, [String prefix = '']) {
+          map.forEach((k, v) {
+            if (v is Map<String, dynamic>) {
+              collectKeys(v, '$prefix$k.');
+            } else {
+              fieldSet.add('$prefix$k');
+              fieldKeyToHeader['$prefix$k'] = k;
+              fieldKeyToPrefix['$prefix$k'] = prefix.isNotEmpty ? prefix.substring(0, prefix.length - 1) : '';
+            }
+          });
+        }
+        collectKeys(data);
+      }
+
+      // --- 2. Fetch user info for all schooluids ---
+      Map<String, Map<String, dynamic>> userInfo = {};
+      if (userUids.isNotEmpty) {
+        final userDocs = await FirebaseFirestore.instance
+            .collection('users')
+            .where(FieldPath.documentId, whereIn: userUids.toList())
+            .get();
+        for (final doc in userDocs.docs) {
+          userInfo[doc.id] = doc.data();
+        }
+      }
+
+      // --- 3. Define desired order ---
+      List<String> preDrillFields = [];
+      List<String> actualDrillFields = [];
+      List<String> learnersFields = [];
+      List<String> personnelFields = [];
+      List<String> postDrillFields = [];
+      List<String> remainingFields = [];
+
+      for (final f in fieldSet) {
+        if (f.startsWith('preDrill.')) {
+          preDrillFields.add(f);
+        } else if (f.startsWith('actualDrill.')) {
+          actualDrillFields.add(f);
+        } else if (f.startsWith('learners.')) {
+          learnersFields.add(f);
+        } else if (f.startsWith('personnel.')) {
+          personnelFields.add(f);
+        } else if (f.startsWith('postDrill.')) {
+          postDrillFields.add(f);
+        } else {
+          remainingFields.add(f);
+        }
+      }
+      preDrillFields.sort();
+      actualDrillFields.sort();
+      learnersFields.sort();
+      personnelFields.sort();
+      postDrillFields.sort();
+      remainingFields.sort();
+
+      final List<String> fields = [
+        ...preDrillFields,
+        ...actualDrillFields,
+        ...learnersFields,
+        ...personnelFields,
+        ...postDrillFields,
+        ...remainingFields,
+      ];
+
+      // --- Remove unwanted fields from the export ---
+      final unwanted = {'schoolId', 'schooluid', 'submittedAt', 'taskId'};
+      List<String> filteredFields = fields.where((f) {
+        final key = fieldKeyToHeader[f] ?? f;
+        // Remove if the last part of the key matches unwanted
+        final last = key;
+        return !unwanted.contains(last);
+      }).toList();
+
+      // --- Prepare prefix row and header row (prefix only once, skip "users") ---
+      List<String> prefixRow = ['No.', '', ''];
+      List<String> headerRow = ['No.', 'schoolID', 'name'];
+      String lastPrefix = '';
+      for (final f in filteredFields) {
+        final prefix = fieldKeyToPrefix[f] ?? '';
+        if (prefix.isEmpty || prefix == 'users') {
+          prefixRow.add('');
+        } else if (prefix != lastPrefix) {
+          prefixRow.add(prefix);
+          lastPrefix = prefix;
+        } else {
+          prefixRow.add('');
+        }
+        headerRow.add(fieldKeyToHeader[f] ?? f);
+      }
+
+      // --- 5. Prepare CSV rows ---
+      List<List<dynamic>> csvRows = [];
+      csvRows.add(prefixRow);
+      csvRows.add(headerRow);
+      int rowNum = 1;
+      for (final doc in submissionsSnap.docs) {
+        final data = doc.data() as Map<String, dynamic>;
+        Map<String, dynamic> flat = {};
+        void flatten(Map<String, dynamic> map, [String prefix = '']) {
+          map.forEach((k, v) {
+            if (v is Map<String, dynamic>) {
+              flatten(v, '$prefix$k.');
+            } else if (v is Timestamp) {
+              flat['$prefix$k'] = v.toDate().toIso8601String();
+            } else if (v is List) {
+              flat['$prefix$k'] = v.join(', ');
+            } else if (v is bool) {
+              flat['$prefix$k'] = v ? 'Yes' : 'No';
+            } else {
+              flat['$prefix$k'] = v;
+            }
+          });
+        }
+        flatten(data);
+
+        // Get user info
+        String schoolUid = data['schoolId'] ?? '';
+        String schoolID = '';
+        String name = '';
+        if (schoolUid.isNotEmpty && userInfo.containsKey(schoolUid)) {
+          schoolID = userInfo[schoolUid]?['schoolId']?.toString() ?? '';
+          name = userInfo[schoolUid]?['name']?.toString() ?? '';
+        }
+
+        csvRows.add([
+          rowNum++,
+          schoolID,
+          name,
+          ...filteredFields.map((f) => flat[f] ?? ''),
+        ]);
+      }
+
+      // --- 6. Convert to CSV string and save ---
+      String csvString = const ListToCsvConverter().convert(csvRows);
+      final Uint8List exportBytes = Uint8List.fromList(utf8.encode(csvString));
+      await FileSaver.instance.saveFile(
+        name: '$taskTitle-submissions',
+        bytes: exportBytes,
+        ext: 'csv',
+        mimeType: MimeType.csv,
+      );
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Exported ${csvRows.length - 2} submissions for "$taskTitle".')),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Export failed: $e')),
+      );
+    }
   }
 
   @override
@@ -106,15 +317,16 @@ class _AdminTasksManagerPageState extends State<AdminTasksManagerPage> {
         final isMobile = constraints.maxWidth < 700;
         return Container(
           width: double.infinity,
-          margin: EdgeInsets.zero, // Remove margin
-          padding: EdgeInsets.zero, // Remove padding
+          margin: EdgeInsets.zero,
+          padding: EdgeInsets.zero,
+          color: Colors.white, // Content background is white
           child: Card(
             elevation: 2,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(0)), // Remove border radius
-            color: Colors.white,
-            margin: EdgeInsets.zero, // Remove card margin
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(0)),
+            color: Colors.white, // Card background is white
+            margin: EdgeInsets.zero,
             child: Padding(
-              padding: EdgeInsets.zero, // Remove card padding
+              padding: EdgeInsets.zero,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -331,6 +543,17 @@ class _AdminTasksManagerPageState extends State<AdminTasksManagerPage> {
                             onPressed: () => setState(() => _sortAsc = !_sortAsc),
                           ),
                         ),
+                        // --- Show Archived Toggle ---
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Checkbox(
+                              value: _showArchived,
+                              onChanged: (v) => setState(() => _showArchived = v ?? false),
+                            ),
+                            const Text('Show Archived'),
+                          ],
+                        ),
                       ],
                     ),
                   ),
@@ -375,6 +598,12 @@ class _AdminTasksManagerPageState extends State<AdminTasksManagerPage> {
                           return _filterActive == 'Active' ? active : !active;
                         }).toList();
                       }
+                      // --- Archived filter ---
+                      docs = docs.where((doc) {
+                        final task = doc.data() as Map<String, dynamic>;
+                        final archived = (task['archived'] ?? false) == true;
+                        return _showArchived ? archived : !archived;
+                      }).toList();
 
                       // --- Sorting ---
                       docs.sort((a, b) {
@@ -436,7 +665,9 @@ class _AdminTasksManagerPageState extends State<AdminTasksManagerPage> {
                                 DataCell(
                                   Switch(
                                     value: task['active'] ?? true,
-                                    onChanged: (val) => _toggleActive(doc.id, val),
+                                    onChanged: (task['archived'] ?? false)
+                                        ? null // Disable switch if archived
+                                        : (val) => _toggleActive(doc.id, val),
                                     activeColor: Color(0xFF7C6CB2),
                                   ),
                                 ),
@@ -457,6 +688,7 @@ class _AdminTasksManagerPageState extends State<AdminTasksManagerPage> {
                                               DateTime? deadline = (task['deadline'] as Timestamp?)?.toDate();
                                               DateTime? drillDate = (task['drillDate'] as Timestamp?)?.toDate();
                                               bool active = task['active'] ?? true;
+                                              bool archived = task['archived'] ?? false; // <-- Add archived state
                                               return AlertDialog(
                                                 title: const Text('Edit Task'),
                                                 content: StatefulBuilder(
@@ -530,6 +762,11 @@ class _AdminTasksManagerPageState extends State<AdminTasksManagerPage> {
                                                           onChanged: (v) => setState(() => active = v),
                                                           title: const Text('Active'),
                                                         ),
+                                                        SwitchListTile(
+                                                          value: archived,
+                                                          onChanged: (v) => setState(() => archived = v),
+                                                          title: const Text('Archived'),
+                                                        ),
                                                       ],
                                                     ),
                                                   ),
@@ -547,6 +784,7 @@ class _AdminTasksManagerPageState extends State<AdminTasksManagerPage> {
                                                         'deadline': deadline,
                                                         'drillDate': drillDate,
                                                         'active': active,
+                                                        'archived': archived, // <-- Pass archived value
                                                       });
                                                     },
                                                     child: const Text('Update'),
@@ -556,13 +794,16 @@ class _AdminTasksManagerPageState extends State<AdminTasksManagerPage> {
                                             },
                                           );
                                           if (updated != null) {
-                                            await FirebaseFirestore.instance.collection('tasks').doc(doc.id).update({
+                                            // If archived is true, always set active to false
+                                            final updateData = {
                                               'type': updated['type'],
                                               'frequency': updated['frequency'],
                                               'deadline': updated['deadline'] != null ? Timestamp.fromDate(updated['deadline']) : null,
                                               'drillDate': updated['drillDate'] != null ? Timestamp.fromDate(updated['drillDate']) : null,
-                                              'active': updated['active'],
-                                            });
+                                              'active': updated['archived'] == true ? false : updated['active'],
+                                              'archived': updated['archived'],
+                                            };
+                                            await FirebaseFirestore.instance.collection('tasks').doc(doc.id).update(updateData);
                                           }
                                         },
                                       ),
@@ -596,6 +837,80 @@ class _AdminTasksManagerPageState extends State<AdminTasksManagerPage> {
                                         tooltip: 'View Submissions',
                                         onPressed: () => _viewSubmissions(doc.id, '${task['type']} (${task['frequency']})'),
                                       ),
+                                      // --- Export Button with export logic ---
+                                      TextButton(
+                                        child: const Text('Export'),
+                                        onPressed: () => _exportSubmissions(doc.id, '${task['type']} (${task['frequency']})'),
+                                      ),
+                                      // --- Archive Button ---
+                                      if (!(task['archived'] ?? false))
+                                        TextButton.icon(
+                                          icon: Icon(Icons.archive, color: Colors.orange),
+                                          label: const Text('Archive', style: TextStyle(color: Colors.orange)),
+                                          style: TextButton.styleFrom(
+                                            foregroundColor: Colors.orange,
+                                          ),
+                                          onPressed: () async {
+                                            final confirm = await showDialog<bool>(
+                                              context: context,
+                                              builder: (context) => AlertDialog(
+                                                title: const Text('Archive Task'),
+                                                content: const Text('Are you sure you want to archive this task?'),
+                                                actions: [
+                                                  TextButton(
+                                                    onPressed: () => Navigator.of(context).pop(false),
+                                                    child: const Text('Cancel'),
+                                                  ),
+                                                  TextButton(
+                                                    onPressed: () => Navigator.of(context).pop(true),
+                                                    child: const Text('Archive', style: TextStyle(color: Colors.orange)),
+                                                  ),
+                                                ],
+                                              ),
+                                            );
+                                            if (confirm == true) {
+                                              // Set archived: true and active: false
+                                              await FirebaseFirestore.instance.collection('tasks').doc(doc.id).update({
+                                                'archived': true,
+                                                'active': false,
+                                              });
+                                            }
+                                          },
+                                        ),
+                                      // --- Unarchive Button ---
+                                      if ((task['archived'] ?? false))
+                                        TextButton.icon(
+                                          icon: Icon(Icons.unarchive, color: Colors.green),
+                                          label: const Text('Unarchive', style: TextStyle(color: Colors.green)),
+                                          style: TextButton.styleFrom(
+                                            foregroundColor: Colors.green,
+                                          ),
+                                          onPressed: () async {
+                                            final confirm = await showDialog<bool>(
+                                              context: context,
+                                              builder: (context) => AlertDialog(
+                                                title: const Text('Unarchive Task'),
+                                                content: const Text('Are you sure you want to unarchive this task?'),
+                                                actions: [
+                                                  TextButton(
+                                                    onPressed: () => Navigator.of(context).pop(false),
+                                                    child: const Text('Cancel'),
+                                                  ),
+                                                  TextButton(
+                                                    onPressed: () => Navigator.of(context).pop(true),
+                                                    child: const Text('Unarchive', style: TextStyle(color: Colors.green)),
+                                                  ),
+                                                ],
+                                              ),
+                                            );
+                                            if (confirm == true) {
+                                              // Set archived: false (do not auto-activate)
+                                              await FirebaseFirestore.instance.collection('tasks').doc(doc.id).update({
+                                                'archived': false,
+                                              });
+                                            }
+                                          },
+                                        ),
                                     ],
                                   ),
                                 ),

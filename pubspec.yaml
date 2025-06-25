@@ -39,6 +39,9 @@ dependencies:
   cloud_firestore: ^5.6.9
   supabase_flutter: ^2.9.1
   file_picker: ^10.2.0
+  excel: ^4.0.6
+  file_saver: ^0.2.14
+  csv: ^6.0.0
 
 dev_dependencies:
   flutter_test:
@@ -68,6 +71,7 @@ flutter:
   #   - images/a_dot_ham.jpeg
   assets:
     - assets/header.jpg
+    - assets/NATIONWIDE SIMULTANEOUS EARTHQUAKE DRILL(Template 3_School Conso for SDO)1.csv
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
 

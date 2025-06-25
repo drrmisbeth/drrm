@@ -132,7 +132,96 @@ class AdminAllSubmissionsPage extends StatelessWidget {
                                                 sub != null
                                                   ? TextButton(
                                                       onPressed: () {
-                                                        // TODO: View submission details
+                                                        showDialog(
+                                                          context: context,
+                                                          builder: (context) {
+                                                            final data = sub as Map<String, dynamic>;
+                                                            return AlertDialog(
+                                                              title: Row(
+                                                                children: [
+                                                                  Icon(Icons.assignment_turned_in, color: Theme.of(context).colorScheme.primary),
+                                                                  const SizedBox(width: 8),
+                                                                  const Text('Submission Summary'),
+                                                                ],
+                                                              ),
+                                                              content: Container(
+                                                                width: 340,
+                                                                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 2),
+                                                                child: Column(
+                                                                  mainAxisSize: MainAxisSize.min,
+                                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                                  children: [
+                                                                    Card(
+                                                                      color: Theme.of(context).colorScheme.primary.withOpacity(0.07),
+                                                                      elevation: 0,
+                                                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                                                      child: Padding(
+                                                                        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+                                                                        child: Column(
+                                                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                                                          children: [
+                                                                            Row(
+                                                                              children: [
+                                                                                Icon(Icons.school, color: Theme.of(context).colorScheme.primary, size: 20),
+                                                                                const SizedBox(width: 6),
+                                                                                Expanded(
+                                                                                  child: Text(
+                                                                                    school['name'] ?? school['email'] ?? 'School',
+                                                                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                                                                  ),
+                                                                                ),
+                                                                              ],
+                                                                            ),
+                                                                            const SizedBox(height: 8),
+                                                                            Row(
+                                                                              children: [
+                                                                                Icon(Icons.access_time, color: Colors.grey[700], size: 18),
+                                                                                const SizedBox(width: 6),
+                                                                                Text(
+                                                                                  submittedAt != null ? _formatDate(submittedAt) : '-',
+                                                                                  style: const TextStyle(fontSize: 14, color: Colors.black87),
+                                                                                ),
+                                                                              ],
+                                                                            ),
+                                                                          ],
+                                                                        ),
+                                                                      ),
+                                                                    ),
+                                                                    const SizedBox(height: 10),
+                                                                    ...data.entries.where((e) =>
+                                                                      e.key != 'schoolId' &&
+                                                                      e.key != 'taskId' &&
+                                                                      e.key != 'submittedAt'
+                                                                    ).map((e) => Padding(
+                                                                      padding: const EdgeInsets.symmetric(vertical: 3, horizontal: 2),
+                                                                      child: Row(
+                                                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                                                        children: [
+                                                                          Text(
+                                                                            '${e.key}: ',
+                                                                            style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.black87),
+                                                                          ),
+                                                                          Expanded(
+                                                                            child: Text(
+                                                                              '${e.value}',
+                                                                              style: const TextStyle(color: Colors.black87),
+                                                                            ),
+                                                                          ),
+                                                                        ],
+                                                                      ),
+                                                                    )),
+                                                                  ],
+                                                                ),
+                                                              ),
+                                                              actions: [
+                                                                TextButton(
+                                                                  onPressed: () => Navigator.of(context).pop(),
+                                                                  child: const Text('Close'),
+                                                                ),
+                                                              ],
+                                                            );
+                                                          },
+                                                        );
                                                       },
                                                       child: const Text('View'),
                                                     )

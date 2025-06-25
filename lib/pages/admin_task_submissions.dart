@@ -224,7 +224,16 @@ class _AdminTaskSubmissionsPageState extends State<AdminTaskSubmissionsPage> {
                                   row['status'] == 'Submitted'
                                       ? TextButton(
                                           onPressed: () {
-                                            // TODO: Show submission details dialog/page
+                                            final submission = row['submission'];
+                                            Navigator.of(context).push(
+                                              MaterialPageRoute(
+                                                builder: (_) => AdminSubmissionDetailPage(
+                                                  submission: submission,
+                                                  schoolName: row['schoolName'],
+                                                  taskTitle: widget.taskTitle,
+                                                ),
+                                              ),
+                                            );
                                           },
                                           child: const Text('View'),
                                         )
@@ -240,6 +249,277 @@ class _AdminTaskSubmissionsPageState extends State<AdminTaskSubmissionsPage> {
                 },
               ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _formatDate(DateTime date) {
+    const months = [
+      '', 'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    return "${months[date.month]} ${date.day}, ${date.year}";
+  }
+}
+
+// Add this new page at the end of the file
+class AdminSubmissionDetailPage extends StatelessWidget {
+  final QueryDocumentSnapshot submission;
+  final String schoolName;
+  final String taskTitle;
+  const AdminSubmissionDetailPage({
+    Key? key,
+    required this.submission,
+    required this.schoolName,
+    required this.taskTitle,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final data = submission.data() as Map<String, dynamic>;
+    final submittedAt = data['submittedAt'] != null
+        ? (data['submittedAt'] as Timestamp).toDate()
+        : null;
+
+    // Helper for Yes/No/null
+    String yn(dynamic v) {
+      if (v == true) return "Yes";
+      if (v == false) return "No";
+      return "-";
+    }
+
+    // Pre-Drill
+    final preDrill = (data['preDrill'] ?? {}) as Map<String, dynamic>;
+    final additionalRemarks = data['additionalRemarks'] ?? "";
+
+    // Actual Drill
+    final actualDrill = (data['actualDrill'] ?? {}) as Map<String, dynamic>;
+
+    // Personnel
+    final personnel = (data['personnel'] ?? {}) as Map<String, dynamic>;
+
+    // Learners
+    final learners = (data['learners'] ?? {}) as Map<String, dynamic>;
+
+    // Post-Drill
+    final postDrill = (data['postDrill'] ?? {}) as Map<String, dynamic>;
+
+    // Attachments
+    final attachments = (data['attachments'] ?? []) as List<dynamic>;
+    final attachmentNames = (data['attachmentNames'] ?? []) as List<dynamic>;
+
+    // External Links
+    final externalLinks = (data['externalLinks'] ?? []) as List<dynamic>;
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Submission Detail'),
+        backgroundColor: colorScheme.primary,
+        foregroundColor: Colors.white,
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(24),
+        child: ListView(
+          children: [
+            Text(
+              taskTitle,
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22, color: colorScheme.primary),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'School: $schoolName',
+              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Submitted At: ${submittedAt != null ? _formatDate(submittedAt) : "-"}',
+              style: const TextStyle(fontSize: 15, color: Colors.black87),
+            ),
+            const Divider(height: 32, thickness: 1.2),
+
+            // Pre-Drill Section
+            Text('Pre-Drill:', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 6),
+            ...preDrill.entries.map((e) => Padding(
+              padding: const EdgeInsets.symmetric(vertical: 2),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(child: Text('${e.key}', style: const TextStyle(fontSize: 15))),
+                  Text(yn(e.value), style: const TextStyle(fontWeight: FontWeight.w600)),
+                ],
+              ),
+            )),
+            if (additionalRemarks.toString().trim().isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 2),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Expanded(child: Text('Additional Remarks', style: TextStyle(fontSize: 15))),
+                    Expanded(child: Text(additionalRemarks, style: const TextStyle(fontWeight: FontWeight.w600))),
+                  ],
+                ),
+              ),
+            const SizedBox(height: 16),
+
+            // Actual Drill Section
+            Text('Actual Drill:', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 6),
+            Row(
+              children: [
+                const Expanded(child: Text('Conducted "DUCK, COVER, and HOLD"?', style: TextStyle(fontSize: 15))),
+                Text(yn(actualDrill['duckCoverHold']), style: const TextStyle(fontWeight: FontWeight.w600)),
+              ],
+            ),
+            Row(
+              children: [
+                const Expanded(child: Text('Conducted evacuation drill?', style: TextStyle(fontSize: 15))),
+                Text(yn(actualDrill['conductedEvacuationDrill']), style: const TextStyle(fontWeight: FontWeight.w600)),
+              ],
+            ),
+            if ((actualDrill['otherActivities'] ?? '').toString().trim().isNotEmpty)
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Expanded(child: Text('Other sub-activities conducted', style: TextStyle(fontSize: 15))),
+                  Expanded(child: Text(actualDrill['otherActivities'] ?? '', style: const TextStyle(fontWeight: FontWeight.w600))),
+                ],
+              ),
+            const SizedBox(height: 16),
+
+            // Personnel & Learners Section
+            Text('Personnel & Learners:', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 6),
+            Text('Personnel (Total Population):', style: const TextStyle(fontWeight: FontWeight.w600)),
+            Row(
+              children: [
+                Expanded(child: Text('Teaching Personnel: ${personnel['teachingTotal'] ?? "-"}')),
+                Expanded(child: Text('Non-Teaching Personnel: ${personnel['nonTeachingTotal'] ?? "-"}')),
+              ],
+            ),
+            Text('Personnel Participated:', style: const TextStyle(fontWeight: FontWeight.w600)),
+            Row(
+              children: [
+                Expanded(child: Text('Teaching: ${personnel['teachingParticipated'] ?? "-"}')),
+                Expanded(child: Text('Non-Teaching: ${personnel['nonTeachingParticipated'] ?? "-"}')),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Text('Learners (Total Population):', style: const TextStyle(fontWeight: FontWeight.w600)),
+            Row(
+              children: [
+                Expanded(child: Text('Male: ${learners['male'] ?? "-"}')),
+                Expanded(child: Text('Female: ${learners['female'] ?? "-"}')),
+              ],
+            ),
+            Row(
+              children: [
+                Expanded(child: Text('IP: ${learners['ip'] ?? "-"}')),
+                Expanded(child: Text('Muslim: ${learners['muslim'] ?? "-"}')),
+                Expanded(child: Text('With Disability: ${learners['pwd'] ?? "-"}')),
+              ],
+            ),
+            Text('Learners Participated:', style: const TextStyle(fontWeight: FontWeight.w600)),
+            Row(
+              children: [
+                Expanded(child: Text('Male: ${learners['participatedMale'] ?? "-"}')),
+                Expanded(child: Text('Female: ${learners['participatedFemale'] ?? "-"}')),
+              ],
+            ),
+            Row(
+              children: [
+                Expanded(child: Text('IP: ${learners['participatedIP'] ?? "-"}')),
+                Expanded(child: Text('Muslim: ${learners['participatedMuslim'] ?? "-"}')),
+                Expanded(child: Text('With Disability: ${learners['participatedPWD'] ?? "-"}')),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            // Post-Drill Section
+            Text('Post-Drill:', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 6),
+            Row(
+              children: [
+                const Expanded(child: Text('Conduct a review of Contingency Plan?', style: TextStyle(fontSize: 15))),
+                Text(yn(postDrill['reviewedContingencyPlan']), style: const TextStyle(fontWeight: FontWeight.w600)),
+              ],
+            ),
+            if ((postDrill['issuesConcerns'] ?? '').toString().trim().isNotEmpty)
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Expanded(child: Text('Issues/Concerns encountered', style: TextStyle(fontSize: 15))),
+                  Expanded(child: Text(postDrill['issuesConcerns'] ?? '', style: const TextStyle(fontWeight: FontWeight.w600))),
+                ],
+              ),
+            const SizedBox(height: 16),
+
+            // Attachments Section
+            if (attachments.isNotEmpty)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Attachments:', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 6),
+                  ...List.generate(attachments.length, (i) => Row(
+                    children: [
+                      const Icon(Icons.attach_file, size: 18),
+                      Expanded(
+                        child: InkWell(
+                          onTap: () {
+                            // Open link
+                            final url = attachments[i];
+                            // ignore: deprecated_member_use
+                            // launch(url); // You may use url_launcher if desired
+                          },
+                          child: Text(
+                            attachmentNames.length > i ? attachmentNames[i] : 'Attachment ${i + 1}',
+                            style: const TextStyle(
+                              color: Colors.blue,
+                              decoration: TextDecoration.underline,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  )),
+                  const SizedBox(height: 16),
+                ],
+              ),
+
+            // External Links Section
+            if (externalLinks.isNotEmpty)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('External Links:', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 6),
+                  ...externalLinks.map((link) => Row(
+                    children: [
+                      const Icon(Icons.link, size: 18),
+                      Expanded(
+                        child: InkWell(
+                          onTap: () {
+                            // ignore: deprecated_member_use
+                            // launch(link); // You may use url_launcher if desired
+                          },
+                          child: Text(
+                            link,
+                            style: const TextStyle(
+                              color: Colors.blue,
+                              decoration: TextDecoration.underline,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  )),
+                ],
+              ),
           ],
         ),
       ),
