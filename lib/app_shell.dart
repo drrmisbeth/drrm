@@ -86,252 +86,242 @@ class _AppShellState extends State<AppShell> {
     final isMobile = MediaQuery.of(context).size.width < 700;
 
     return Scaffold(
-      body: SizedBox.expand( // Ensure the whole area is used
-        child: Row(
-          children: [
-            // Sidebar
-            if (!isMobile)
-              Container(
-                width: 250,
-                height: double.infinity, // Fill vertical space
-                decoration: BoxDecoration(
-                  color: const Color(0xFF232323), // Lighter black sidebar
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.07),
-                      blurRadius: 12,
-                    ),
-                  ],
-                ),
-                child: Column(
-                  children: [
-                    const SizedBox(height: 32),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Container(
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Colors.white.withOpacity(0.10), // subtle highlight
-                          ),
-                          padding: const EdgeInsets.all(8),
-                          child: Icon(Icons.shield, color: Colors.white, size: 32),
-                        ),
-                        const SizedBox(width: 12),
-                        Text(
-                          'DRRMIS',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 22,
-                            color: Colors.white,
-                            letterSpacing: 1.3,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 32),
-                    // Navigation items
-                    ...List.generate(navItems.length, (i) {
-                      final selected = _selectedIndex == i;
-                      final menuColors = [
-                        Colors.orange,
-                        Colors.yellow,
-                        Colors.red,
-                        Colors.deepOrange,
-                        Colors.amber,
-                        Colors.deepOrangeAccent,
-                        Colors.orangeAccent,
-                      ];
-                      final menuColor = menuColors[i % menuColors.length];
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 12),
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 180),
-                          decoration: BoxDecoration(
-                            color: selected ? menuColor.withOpacity(0.20) : Colors.transparent,
-                            borderRadius: BorderRadius.circular(18),
-                          ),
-                          child: ListTile(
-                            leading: Icon(
-                              _getMenuIcon(navItems[i], isSchool),
-                              color: selected ? menuColor : Colors.white.withOpacity(0.85),
-                            ),
-                            title: Text(
-                              navItems[i],
-                              style: TextStyle(
-                                color: selected ? menuColor : Colors.white.withOpacity(0.92),
-                                fontWeight: selected ? FontWeight.bold : FontWeight.w500,
-                                fontSize: 16,
-                              ),
-                            ),
-                            onTap: () {
-                              setState(() {
-                                _selectedIndex = i;
-                              });
-                            },
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(18),
-                            ),
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                          ),
-                        ),
-                      );
-                    }),
-                    const Spacer(),
-                    // User info and logout
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      body: Row(
+        children: [
+          // Sidebar
+          if (!isMobile)
+            Container(
+              width: isMobile ? 80 : 250,
+              height: MediaQuery.of(context).size.height,
+              decoration: BoxDecoration(
+                color: const Color(0xFF232323),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.07),
+                    blurRadius: 12,
+                  ),
+                ],
+              ),
+              child: Column(
+                children: [
+                  SizedBox(height: isMobile ? 18 : 32),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.13),
-                          borderRadius: BorderRadius.circular(18),
+                          shape: BoxShape.circle,
+                          color: Colors.white.withOpacity(0.10),
                         ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              isSchool ? Icons.school : Icons.admin_panel_settings,
-                              color: Colors.white,
-                              size: 22,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              isSchool ? 'School' : 'Admin',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w600,
-                                fontSize: 15,
-                              ),
-                            ),
-                            const Spacer(),
-                            CircleAvatar(
-                              radius: 16,
-                              backgroundColor: Colors.white.withOpacity(0.18),
-                              child: IconButton(
-                                icon: const Icon(Icons.account_circle, color: Colors.white, size: 18),
-                                onPressed: () {},
-                                tooltip: 'Profile',
-                              ),
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.logout, color: Colors.white, size: 18),
-                              tooltip: 'Logout',
-                              onPressed: _logout,
-                            ),
-                          ],
+                        padding: EdgeInsets.all(isMobile ? 4 : 8),
+                        child: Icon(Icons.shield, color: Colors.white, size: isMobile ? 22 : 32),
+                      ),
+                      SizedBox(width: isMobile ? 6 : 12),
+                      Text(
+                        'DRRMIS',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: isMobile ? 15 : 22,
+                          color: Colors.white,
+                          letterSpacing: 1.3,
                         ),
                       ),
-                    ),
-                  ],
-                ),
-              ),
-            // Main content area
-            Expanded(
-              child: Container(
-                color: Colors.white, // Fill background to the edge
-                width: double.infinity,
-                height: double.infinity, // Fill all available height
-                child: Column(
-                  children: [
-                    // Header area
-                    Container(
-                      width: double.infinity,
-                      height: 120,
-                      margin: const EdgeInsets.only(bottom: 18),
-                      padding: EdgeInsets.zero,
-                      decoration: null,
-                      child: Stack(
-                        fit: StackFit.expand,
+                    ],
+                  ),
+                  SizedBox(height: isMobile ? 18 : 32),
+                  // Navigation items
+                  ...List.generate(navItems.length, (i) {
+                    final selected = _selectedIndex == i;
+                    final menuColors = [
+                      Colors.orange,
+                      Colors.yellow,
+                      Colors.red,
+                      Colors.deepOrange,
+                      Colors.amber,
+                      Colors.deepOrangeAccent,
+                      Colors.orangeAccent,
+                    ];
+                    final menuColor = menuColors[i % menuColors.length];
+                    return Padding(
+                      padding: EdgeInsets.symmetric(vertical: isMobile ? 1 : 2, horizontal: isMobile ? 4 : 12),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 180),
+                        decoration: BoxDecoration(
+                          color: selected ? menuColor.withOpacity(0.20) : Colors.transparent,
+                          borderRadius: BorderRadius.circular(isMobile ? 10 : 18),
+                        ),
+                        child: ListTile(
+                          leading: Icon(
+                            _getMenuIcon(navItems[i], isSchool),
+                            color: selected ? menuColor : Colors.white.withOpacity(0.85),
+                            size: isMobile ? 18 : 24,
+                          ),
+                          title: Text(
+                            navItems[i],
+                            style: TextStyle(
+                              color: selected ? menuColor : Colors.white.withOpacity(0.92),
+                              fontWeight: selected ? FontWeight.bold : FontWeight.w500,
+                              fontSize: isMobile ? 13 : 16,
+                            ),
+                          ),
+                          onTap: () {
+                            setState(() {
+                              _selectedIndex = i;
+                            });
+                          },
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(isMobile ? 10 : 18),
+                          ),
+                          contentPadding: EdgeInsets.symmetric(horizontal: isMobile ? 4 : 8, vertical: isMobile ? 1 : 2),
+                        ),
+                      ),
+                    );
+                  }),
+                  const Spacer(),
+                  // User info and logout
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: isMobile ? 8 : 18, vertical: isMobile ? 8 : 18),
+                    child: Container(
+                      padding: EdgeInsets.symmetric(horizontal: isMobile ? 6 : 12, vertical: isMobile ? 5 : 10),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.13),
+                        borderRadius: BorderRadius.circular(isMobile ? 10 : 18),
+                      ),
+                      child: Row(
                         children: [
-                          // Background image with lower opacity and center alignment
-                          Opacity(
-                            opacity: 0.16, // Lowered opacity for a subtler effect
-                            child: Image.asset(
-                              'assets/header.jpg',
-                              fit: BoxFit.cover,
-                              alignment: Alignment.center, // Show the middle part of the image
-                              width: double.infinity,
-                              height: double.infinity,
+                          Icon(
+                            isSchool ? Icons.school : Icons.admin_panel_settings,
+                            color: Colors.white,
+                            size: isMobile ? 16 : 22,
+                          ),
+                          SizedBox(width: isMobile ? 4 : 8),
+                          Text(
+                            isSchool ? 'School' : 'Admin',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600,
+                              fontSize: isMobile ? 12 : 15,
                             ),
                           ),
-                          Container(
-                            color: Colors.black.withOpacity(0.10), // Optional: subtle overlay for contrast
-                          ),
-                          Align(
-                            alignment: Alignment.centerLeft,
-                            child: Padding(
-                              padding: const EdgeInsets.only(left: 32, top: 28),
-                              child: Text(
-                                'Roxas City',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 38,
-                                  letterSpacing: 1.1,
-                                  shadows: [
-                                    Shadow(
-                                      blurRadius: 8,
-                                      color: Colors.black38,
-                                      offset: Offset(1, 2),
-                                    ),
-                                  ],
-                                ),
-                              ),
+                          const Spacer(),
+                          CircleAvatar(
+                            radius: isMobile ? 12 : 16,
+                            backgroundColor: Colors.white.withOpacity(0.18),
+                            child: IconButton(
+                              icon: Icon(Icons.account_circle, color: Colors.white, size: isMobile ? 14 : 18),
+                              onPressed: () {},
+                              tooltip: 'Profile',
                             ),
+                          ),
+                          IconButton(
+                            icon: Icon(Icons.logout, color: Colors.white, size: isMobile ? 14 : 18),
+                            tooltip: 'Logout',
+                            onPressed: _logout,
                           ),
                         ],
                       ),
                     ),
-                    // Page content
-                    Expanded(
-                      child: Container(
-                        color: Colors.white,
-                        alignment: Alignment.topCenter,
-                        width: double.infinity,
-                        height: double.infinity,
-                        child: SingleChildScrollView(
-                          child: Padding(
-                            padding: EdgeInsets.only(
-                              top: isMobile ? 12 : 32,
-                              left: isMobile ? 4 : 16,
-                              right: isMobile ? 4 : 16,
-                              bottom: isMobile ? 8 : 16,
-                            ),
-                            child: ConstrainedBox(
-                              constraints: BoxConstraints(
-                                maxWidth: isMobile ? double.infinity : 1440,
-                                minHeight: MediaQuery.of(context).size.height - 120 - 18 - (isMobile ? 20 : 0), // Fill vertical space under header
-                              ),
-                              child: Card(
-                                elevation: 5,
-                                margin: EdgeInsets.zero,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
-                                color: Colors.white.withOpacity(0.98),
-                                child: Padding(
-                                  padding: EdgeInsets.symmetric(
-                                    vertical: isMobile ? 12 : 32,
-                                    horizontal: isMobile ? 6 : 32,
-                                  ),
-                                  child: pages[_selectedIndex],
+                  ),
+                ],
+              ),
+            ),
+          // Main content area
+          Expanded(
+            child: Column(
+              children: [
+                // Header area
+                Container(
+                  width: double.infinity,
+                  height: isMobile ? 70 : 120,
+                  margin: EdgeInsets.only(bottom: isMobile ? 8 : 18),
+                  padding: EdgeInsets.zero,
+                  decoration: null,
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      Opacity(
+                        opacity: 0.16,
+                        child: Image.asset(
+                          'assets/header.jpg',
+                          fit: BoxFit.cover,
+                          alignment: Alignment.center,
+                          width: double.infinity,
+                          height: double.infinity,
+                        ),
+                      ),
+                      Container(
+                        color: Colors.black.withOpacity(0.10),
+                      ),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Padding(
+                          padding: EdgeInsets.only(left: isMobile ? 12 : 32, top: isMobile ? 10 : 28),
+                          child: Text(
+                            'Roxas City',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: isMobile ? 22 : 38,
+                              letterSpacing: 1.1,
+                              shadows: const [
+                                Shadow(
+                                  blurRadius: 8,
+                                  color: Colors.black38,
+                                  offset: Offset(1, 2),
                                 ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // Page content
+                Expanded(
+                  child: Container(
+                    color: Colors.white,
+                    alignment: Alignment.topCenter,
+                    child: SingleChildScrollView(
+                      child: Padding(
+                        padding: EdgeInsets.only(
+                          top: isMobile ? 8 : 32,
+                          left: isMobile ? 2 : 16,
+                          right: isMobile ? 2 : 16,
+                          bottom: isMobile ? 4 : 16,
+                        ),
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(
+                            maxWidth: isMobile ? double.infinity : 1440,
+                          ),
+                          child: Card(
+                            elevation: 5,
+                            margin: EdgeInsets.zero,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(isMobile ? 10 : 22)),
+                            color: Colors.white.withOpacity(0.98),
+                            child: Padding(
+                              padding: EdgeInsets.symmetric(
+                                vertical: isMobile ? 8 : 32,
+                                horizontal: isMobile ? 4 : 32,
                               ),
+                              child: pages[_selectedIndex],
                             ),
                           ),
                         ),
                       ),
                     ),
-                  ],
+                  ),
                 ),
-              ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
       // For mobile, show a drawer for navigation
       drawer: isMobile
           ? Drawer(
               child: Container(
-                color: const Color(0xFF232323), // Lighter black sidebar for mobile drawer
+                color: const Color(0xFF232323),
                 child: Column(
                   children: [
                     DrawerHeader(

@@ -12,14 +12,18 @@ class SchoolTasksPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final isMobile = MediaQuery.of(context).size.width < 700;
     return LayoutBuilder(
       builder: (context, constraints) {
-        final isMobile = constraints.maxWidth < 700;
+        // final isMobile = constraints.maxWidth < 700; // Use MediaQuery for consistency
         return SingleChildScrollView(
           child: Container(
-            color: Colors.white, // Content background is white
+            color: Colors.white,
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+              padding: EdgeInsets.symmetric(
+                horizontal: isMobile ? 8 : 24,
+                vertical: isMobile ? 16 : 32,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -27,12 +31,12 @@ class SchoolTasksPage extends StatelessWidget {
                     'Submission Tasks',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
-                      fontSize: 30,
+                      fontSize: isMobile ? 22 : 30,
                       color: Colors.black,
                       letterSpacing: 1.2,
                     ),
                   ),
-                  const SizedBox(height: 28),
+                  SizedBox(height: isMobile ? 16 : 28),
                   StreamBuilder<QuerySnapshot>(
                     stream: FirebaseFirestore.instance
                         .collection('tasks')
@@ -64,143 +68,151 @@ class SchoolTasksPage extends StatelessWidget {
 
                           return SizedBox(
                             width: double.infinity,
-                            child: DataTable(
-                              columnSpacing: isMobile ? 8 : 24,
-                              dataRowMinHeight: 44,
-                              columns: const [
-                                DataColumn(label: Text('Type', style: TextStyle(fontWeight: FontWeight.bold))),
-                                DataColumn(label: Text('Frequency', style: TextStyle(fontWeight: FontWeight.bold))),
-                                DataColumn(label: Text('Deadline', style: TextStyle(fontWeight: FontWeight.bold))),
-                                DataColumn(label: Text('Drill Date', style: TextStyle(fontWeight: FontWeight.bold))),
-                                DataColumn(label: Text('Status', style: TextStyle(fontWeight: FontWeight.bold))),
-                                DataColumn(label: Text('Action', style: TextStyle(fontWeight: FontWeight.bold))),
-                              ],
-                              rows: docs.map((doc) {
-                                final task = doc.data() as Map<String, dynamic>;
-                                final deadline = (task['deadline'] as Timestamp?)?.toDate();
-                                final drillDate = (task['drillDate'] as Timestamp?)?.toDate();
-                                final isActive = task['active'] ?? true;
-                                IconData icon;
-                                Color iconBg;
-                                switch ((task['type'] as String).toLowerCase()) {
-                                  case 'earthquake':
-                                    icon = Icons.public;
-                                    iconBg = colorScheme.primary;
-                                    break;
-                                  case 'fire':
-                                    icon = Icons.local_fire_department;
-                                    iconBg = colorScheme.error;
-                                    break;
-                                  default:
-                                    icon = Icons.warning_amber;
-                                    iconBg = colorScheme.secondary;
-                                }
-                                final isSubmitted = submittedTaskIds.contains(doc.id);
-                                return DataRow(
-                                  cells: [
-                                    DataCell(Row(
-                                      children: [
-                                        CircleAvatar(
-                                          backgroundColor: iconBg,
-                                          child: Icon(icon, color: Colors.white, size: 22),
-                                          radius: 16,
-                                        ),
-                                        const SizedBox(width: 8),
-                                        Text(task['type'] ?? '', style: const TextStyle(fontWeight: FontWeight.w600)),
-                                      ],
-                                    )),
-                                    DataCell(Text(task['frequency'] ?? '')),
-                                    DataCell(Text(
-                                      deadline != null
-                                          ? "${_formatDate(deadline)}"
-                                          : "N/A",
-                                    )),
-                                    DataCell(Text(
-                                      drillDate != null
-                                          ? "${_formatDate(drillDate)}"
-                                          : "N/A",
-                                    )),
-                                    DataCell(
-                                      isActive
-                                          ? Chip(
-                                              label: const Text('Active'),
-                                              backgroundColor: colorScheme.primary.withOpacity(0.18),
-                                              labelStyle: TextStyle(
-                                                color: colorScheme.primary,
-                                                fontWeight: FontWeight.w700,
-                                              ),
-                                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
-                                            )
-                                          : Chip(
-                                              label: const Text('Inactive'),
-                                              backgroundColor: Colors.grey[300],
-                                              labelStyle: const TextStyle(color: Colors.black54, fontSize: 12),
-                                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+                            child: SingleChildScrollView(
+                              scrollDirection: Axis.horizontal,
+                              child: ConstrainedBox(
+                                constraints: BoxConstraints(
+                                  minWidth: isMobile ? 600 : 0,
+                                ),
+                                child: DataTable(
+                                  columnSpacing: isMobile ? 8 : 24,
+                                  dataRowMinHeight: isMobile ? 36 : 44,
+                                  columns: const [
+                                    DataColumn(label: Text('Type', style: TextStyle(fontWeight: FontWeight.bold))),
+                                    DataColumn(label: Text('Frequency', style: TextStyle(fontWeight: FontWeight.bold))),
+                                    DataColumn(label: Text('Deadline', style: TextStyle(fontWeight: FontWeight.bold))),
+                                    DataColumn(label: Text('Drill Date', style: TextStyle(fontWeight: FontWeight.bold))),
+                                    DataColumn(label: Text('Status', style: TextStyle(fontWeight: FontWeight.bold))),
+                                    DataColumn(label: Text('Action', style: TextStyle(fontWeight: FontWeight.bold))),
+                                  ],
+                                  rows: docs.map((doc) {
+                                    final task = doc.data() as Map<String, dynamic>;
+                                    final deadline = (task['deadline'] as Timestamp?)?.toDate();
+                                    final drillDate = (task['drillDate'] as Timestamp?)?.toDate();
+                                    final isActive = task['active'] ?? true;
+                                    IconData icon;
+                                    Color iconBg;
+                                    switch ((task['type'] as String).toLowerCase()) {
+                                      case 'earthquake':
+                                        icon = Icons.public;
+                                        iconBg = colorScheme.primary;
+                                        break;
+                                      case 'fire':
+                                        icon = Icons.local_fire_department;
+                                        iconBg = colorScheme.error;
+                                        break;
+                                      default:
+                                        icon = Icons.warning_amber;
+                                        iconBg = colorScheme.secondary;
+                                    }
+                                    final isSubmitted = submittedTaskIds.contains(doc.id);
+                                    return DataRow(
+                                      cells: [
+                                        DataCell(Row(
+                                          children: [
+                                            CircleAvatar(
+                                              backgroundColor: iconBg,
+                                              child: Icon(icon, color: Colors.white, size: 22),
+                                              radius: 16,
                                             ),
-                                    ),
-                                    DataCell(
-                                      isSubmitted
-                                          ? Row(
-                                              children: [
-                                                ElevatedButton.icon(
+                                            const SizedBox(width: 8),
+                                            Text(task['type'] ?? '', style: const TextStyle(fontWeight: FontWeight.w600)),
+                                          ],
+                                        )),
+                                        DataCell(Text(task['frequency'] ?? '')),
+                                        DataCell(Text(
+                                          deadline != null
+                                              ? "${_formatDate(deadline)}"
+                                              : "N/A",
+                                        )),
+                                        DataCell(Text(
+                                          drillDate != null
+                                              ? "${_formatDate(drillDate)}"
+                                              : "N/A",
+                                        )),
+                                        DataCell(
+                                          isActive
+                                              ? Chip(
+                                                  label: const Text('Active'),
+                                                  backgroundColor: colorScheme.primary.withOpacity(0.18),
+                                                  labelStyle: TextStyle(
+                                                    color: colorScheme.primary,
+                                                    fontWeight: FontWeight.w700,
+                                                  ),
+                                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+                                                )
+                                              : Chip(
+                                                  label: const Text('Inactive'),
+                                                  backgroundColor: Colors.grey[300],
+                                                  labelStyle: const TextStyle(color: Colors.black54, fontSize: 12),
+                                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+                                                ),
+                                        ),
+                                        DataCell(
+                                          isSubmitted
+                                              ? Row(
+                                                  children: [
+                                                    ElevatedButton.icon(
+                                                      style: ElevatedButton.styleFrom(
+                                                        shape: const StadiumBorder(),
+                                                        backgroundColor: Colors.grey[400],
+                                                        foregroundColor: Colors.white,
+                                                        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                                                        textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                                                        elevation: 0,
+                                                      ),
+                                                      onPressed: null,
+                                                      icon: const Icon(Icons.check, size: 20),
+                                                      label: const Text('Submitted'),
+                                                    ),
+                                                    const SizedBox(width: 8),
+                                                    OutlinedButton.icon(
+                                                      style: OutlinedButton.styleFrom(
+                                                        shape: const StadiumBorder(),
+                                                        side: BorderSide(color: colorScheme.primary, width: 2),
+                                                        foregroundColor: colorScheme.primary,
+                                                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                                                        textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                                                      ),
+                                                      icon: const Icon(Icons.edit, size: 20),
+                                                      label: const Text('Edit'),
+                                                      onPressed: () {
+                                                        Navigator.of(context).push(
+                                                          MaterialPageRoute(
+                                                            builder: (_) => SchoolSubmitFormPage(taskId: doc.id),
+                                                          ),
+                                                        );
+                                                      },
+                                                    ),
+                                                  ],
+                                                )
+                                              : ElevatedButton.icon(
                                                   style: ElevatedButton.styleFrom(
                                                     shape: const StadiumBorder(),
-                                                    backgroundColor: Colors.grey[400],
+                                                    backgroundColor: colorScheme.primary,
                                                     foregroundColor: Colors.white,
                                                     padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
                                                     textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                                                     elevation: 0,
                                                   ),
-                                                  onPressed: null,
-                                                  icon: const Icon(Icons.check, size: 20),
-                                                  label: const Text('Submitted'),
+                                                  onPressed: isActive
+                                                      ? () {
+                                                          Navigator.of(context).push(
+                                                            MaterialPageRoute(
+                                                              builder: (_) => SchoolSubmitFormPage(taskId: doc.id),
+                                                            ),
+                                                          );
+                                                        }
+                                                      : null,
+                                                  icon: const Icon(Icons.upload_rounded, size: 20),
+                                                  label: const Text('Submit'),
                                                 ),
-                                                const SizedBox(width: 8),
-                                                OutlinedButton.icon(
-                                                  style: OutlinedButton.styleFrom(
-                                                    shape: const StadiumBorder(),
-                                                    side: BorderSide(color: colorScheme.primary, width: 2),
-                                                    foregroundColor: colorScheme.primary,
-                                                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                                                    textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-                                                  ),
-                                                  icon: const Icon(Icons.edit, size: 20),
-                                                  label: const Text('Edit'),
-                                                  onPressed: () {
-                                                    Navigator.of(context).push(
-                                                      MaterialPageRoute(
-                                                        builder: (_) => SchoolSubmitFormPage(taskId: doc.id),
-                                                      ),
-                                                    );
-                                                  },
-                                                ),
-                                              ],
-                                            )
-                                          : ElevatedButton.icon(
-                                              style: ElevatedButton.styleFrom(
-                                                shape: const StadiumBorder(),
-                                                backgroundColor: colorScheme.primary,
-                                                foregroundColor: Colors.white,
-                                                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-                                                textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-                                                elevation: 0,
-                                              ),
-                                              onPressed: isActive
-                                                  ? () {
-                                                      Navigator.of(context).push(
-                                                        MaterialPageRoute(
-                                                          builder: (_) => SchoolSubmitFormPage(taskId: doc.id),
-                                                        ),
-                                                      );
-                                                    }
-                                                  : null,
-                                              icon: const Icon(Icons.upload_rounded, size: 20),
-                                              label: const Text('Submit'),
-                                            ),
-                                    ),
-                                  ],
-                                );
-                              }).toList(),
+                                        ),
+                                      ],
+                                    );
+                                  }).toList(),
+                                ),
+                              ),
                             ),
                           );
                         },
@@ -920,23 +932,26 @@ class _SchoolSubmitFormPageState extends State<SchoolSubmitFormPage> {
       ),
       body: SingleChildScrollView(
         child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: isMobile ? 8 : 32, vertical: 18),
+          padding: EdgeInsets.symmetric(horizontal: isMobile ? 4 : 32, vertical: isMobile ? 8 : 18),
           child: Card(
             elevation: 0,
             color: colorScheme.secondary.withOpacity(0.08),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
             child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 18),
+              padding: EdgeInsets.symmetric(
+                vertical: isMobile ? 12 : 24,
+                horizontal: isMobile ? 8 : 18,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Progress indicator
                   Padding(
-                    padding: const EdgeInsets.only(bottom: 18),
+                    padding: EdgeInsets.only(bottom: isMobile ? 10 : 18),
                     child: Row(
                       children: List.generate(4, (i) => Expanded(
                         child: Container(
-                          height: 7,
+                          height: isMobile ? 5 : 7,
                           margin: EdgeInsets.only(right: i < 3 ? 6 : 0),
                           decoration: BoxDecoration(
                             color: i <= _step ? colorScheme.primary : Colors.grey[300],
@@ -947,7 +962,7 @@ class _SchoolSubmitFormPageState extends State<SchoolSubmitFormPage> {
                     ),
                   ),
                   ..._buildStepContent(context),
-                  const SizedBox(height: 24),
+                  SizedBox(height: isMobile ? 16 : 24),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -959,6 +974,10 @@ class _SchoolSubmitFormPageState extends State<SchoolSubmitFormPage> {
                           style: OutlinedButton.styleFrom(
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                             side: BorderSide(color: colorScheme.primary, width: 2),
+                            padding: EdgeInsets.symmetric(
+                              horizontal: isMobile ? 10 : 18,
+                              vertical: isMobile ? 6 : 10,
+                            ),
                           ),
                         ),
                       if (_step < 3)
@@ -969,26 +988,34 @@ class _SchoolSubmitFormPageState extends State<SchoolSubmitFormPage> {
                             backgroundColor: colorScheme.primary,
                             foregroundColor: Colors.white,
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                            padding: EdgeInsets.symmetric(
+                              horizontal: isMobile ? 10 : 18,
+                              vertical: isMobile ? 6 : 10,
+                            ),
                           ),
                           onPressed: _submitting ? null : () => setState(() => _step++),
                         ),
                       if (_step == 3)
                         ElevatedButton.icon(
                           icon: _submitting
-                              ? const SizedBox(
-                                  width: 18,
-                                  height: 18,
+                              ? SizedBox(
+                                  width: isMobile ? 14 : 18,
+                                  height: isMobile ? 14 : 18,
                                   child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                                 )
                               : const Icon(Icons.send_rounded),
                           label: Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 10),
-                            child: Text(_submitting ? 'Submitting...' : 'Submit', style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+                            padding: EdgeInsets.symmetric(vertical: isMobile ? 6 : 10),
+                            child: Text(_submitting ? 'Submitting...' : 'Submit', style: TextStyle(fontSize: isMobile ? 14 : 17, fontWeight: FontWeight.bold)),
                           ),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: colorScheme.primary,
                             foregroundColor: Colors.white,
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                            padding: EdgeInsets.symmetric(
+                              horizontal: isMobile ? 10 : 18,
+                              vertical: isMobile ? 6 : 10,
+                            ),
                           ),
                           onPressed: _submitting ? null : _submit,
                         ),
@@ -996,40 +1023,46 @@ class _SchoolSubmitFormPageState extends State<SchoolSubmitFormPage> {
                   ),
                   // File picker UI (show on last step)
                   if (_step == 3) ...[
-                    const SizedBox(height: 18),
-                    Text('Attachments (optional, max total 50MB):', style: TextStyle(fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 6),
+                    SizedBox(height: isMobile ? 10 : 18),
+                    Text('Attachments (optional, max total 50MB):', style: TextStyle(fontWeight: FontWeight.bold, fontSize: isMobile ? 13 : 15)),
+                    SizedBox(height: isMobile ? 4 : 6),
                     OutlinedButton.icon(
                       icon: const Icon(Icons.attach_file),
                       label: const Text('Add Files'),
                       onPressed: _uploadingFiles || _submitting ? null : _pickFiles,
+                      style: OutlinedButton.styleFrom(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: isMobile ? 10 : 18,
+                          vertical: isMobile ? 6 : 10,
+                        ),
+                      ),
                     ),
                     if (_pickedFiles.isNotEmpty)
                       Padding(
-                        padding: const EdgeInsets.only(top: 8),
+                        padding: EdgeInsets.only(top: isMobile ? 4 : 8),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             ..._pickedFiles.map((f) => Row(
                               children: [
                                 const Icon(Icons.insert_drive_file, size: 18),
-                                const SizedBox(width: 6),
+                                SizedBox(width: isMobile ? 3 : 6),
                                 Expanded(child: Text(f.name, overflow: TextOverflow.ellipsis)),
-                                Text('${(f.size / 1024).toStringAsFixed(1)} KB', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                                Text('${(f.size / 1024).toStringAsFixed(1)} KB', style: TextStyle(fontSize: isMobile ? 10 : 12, color: Colors.grey)),
                               ],
                             )),
-                            const SizedBox(height: 4),
+                            SizedBox(height: isMobile ? 2 : 4),
                             Text(
                               'Total: ${( _pickedFiles.fold<int>(0, (sum, f) => sum + (f.bytes?.length ?? 0)) / (1024 * 1024)).toStringAsFixed(2)} MB',
-                              style: const TextStyle(fontSize: 12, color: Colors.grey),
+                              style: TextStyle(fontSize: isMobile ? 10 : 12, color: Colors.grey),
                             ),
                           ],
                         ),
                       ),
-                    const SizedBox(height: 18),
+                    SizedBox(height: isMobile ? 10 : 18),
                     // New: Input for external links
-                    Text('External Links (e.g., Google Drive, YouTube, etc.):', style: TextStyle(fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 6),
+                    Text('External Links (e.g., Google Drive, YouTube, etc.):', style: TextStyle(fontWeight: FontWeight.bold, fontSize: isMobile ? 13 : 15)),
+                    SizedBox(height: isMobile ? 4 : 6),
                     TextField(
                       controller: linksController,
                       decoration: InputDecoration(

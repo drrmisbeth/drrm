@@ -76,17 +76,18 @@ class _AdminAnnouncementsPageState extends State<AdminAnnouncementsPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: EdgeInsets.only(left: isMobile ? 8 : 24, top: isMobile ? 12 : 24, bottom: 8),
+            padding: EdgeInsets.only(left: isMobile ? 8 : 24, top: isMobile ? 8 : 24, bottom: isMobile ? 4 : 8),
             child: Text(
               'Announcements Manager',
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: colorScheme.primary,
+                    fontSize: isMobile ? 18 : null,
                   ),
             ),
           ),
           Padding(
-            padding: EdgeInsets.symmetric(horizontal: isMobile ? 8 : 24, vertical: 8),
+            padding: EdgeInsets.symmetric(horizontal: isMobile ? 8 : 24, vertical: isMobile ? 4 : 8),
             child: isMobile
                 ? Column(
                     children: [
@@ -268,9 +269,9 @@ class _AdminAnnouncementsPageState extends State<AdminAnnouncementsPage> {
                 .snapshots(),
             builder: (context, snapshot) {
               if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                return const Padding(
-                  padding: EdgeInsets.all(24),
-                  child: Text('No announcements yet.'),
+                return Padding(
+                  padding: EdgeInsets.all(isMobile ? 8 : 24),
+                  child: const Text('No announcements yet.'),
                 );
               }
               final docs = snapshot.data!.docs;
@@ -278,22 +279,22 @@ class _AdminAnnouncementsPageState extends State<AdminAnnouncementsPage> {
                 children: docs.map((doc) {
                   final data = doc.data() as Map<String, dynamic>;
                   return Padding(
-                    padding: EdgeInsets.symmetric(horizontal: isMobile ? 8 : 24, vertical: 6),
+                    padding: EdgeInsets.symmetric(horizontal: isMobile ? 8 : 24, vertical: isMobile ? 3 : 6),
                     child: Material(
                       elevation: 0,
                       borderRadius: BorderRadius.circular(24),
                       color: colorScheme.secondary.withOpacity(0.13),
                       child: ListTile(
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                        contentPadding: EdgeInsets.symmetric(horizontal: isMobile ? 12 : 24, vertical: isMobile ? 8 : 12),
                         title: Text(
                           data['title'] ?? '',
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: isMobile ? 14 : 16),
                         ),
                         subtitle: Padding(
-                          padding: const EdgeInsets.only(top: 4),
+                          padding: EdgeInsets.only(top: isMobile ? 2 : 4),
                           child: Text(
                             data['description'] ?? '',
-                            style: const TextStyle(fontSize: 14, color: Colors.black87),
+                            style: TextStyle(fontSize: isMobile ? 12 : 14, color: Colors.black87),
                           ),
                         ),
                         trailing: Row(

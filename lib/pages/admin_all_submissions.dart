@@ -55,10 +55,10 @@ class AdminAllSubmissionsPage extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text('All Submissions', style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                            fontSize: isMobile ? 18 : null,
+                            fontSize: isMobile ? 16 : 22,
                             color: colorScheme.primary,
                           )),
-                          SizedBox(height: isMobile ? 8 : 16),
+                          SizedBox(height: isMobile ? 6 : 16),
                           ...tasks.map((taskDoc) {
                             final task = taskDoc.data() as Map<String, dynamic>;
                             final taskId = taskDoc.id;
@@ -94,8 +94,8 @@ class AdminAllSubmissionsPage extends StatelessWidget {
                                       child: SizedBox(
                                         width: double.infinity,
                                         child: DataTable(
-                                          columnSpacing: 28,
-                                          dataRowMinHeight: 44,
+                                          columnSpacing: isMobile ? 12 : 28,
+                                          dataRowMinHeight: isMobile ? 36 : 44,
                                           columns: const [
                                             DataColumn(label: Text('School')),
                                             DataColumn(label: Text('Status')),

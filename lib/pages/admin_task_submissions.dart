@@ -20,6 +20,7 @@ class _AdminTaskSubmissionsPageState extends State<AdminTaskSubmissionsPage> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final isMobile = MediaQuery.of(context).size.width < 700;
     return Scaffold(
       appBar: AppBar(
         title: Text('Submissions for ${widget.taskTitle}'),
@@ -27,18 +28,18 @@ class _AdminTaskSubmissionsPageState extends State<AdminTaskSubmissionsPage> {
         foregroundColor: Colors.white,
       ),
       body: Padding(
-        padding: const EdgeInsets.all(18),
+        padding: EdgeInsets.all(isMobile ? 8 : 18),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Search, filter, sort row
             Wrap(
-              spacing: 12,
+              spacing: isMobile ? 6 : 12,
               runSpacing: 8,
               crossAxisAlignment: WrapCrossAlignment.center,
               children: [
                 SizedBox(
-                  width: 220,
+                  width: isMobile ? 140 : 220,
                   child: TextField(
                     decoration: InputDecoration(
                       prefixIcon: const Icon(Icons.search),
@@ -102,7 +103,7 @@ class _AdminTaskSubmissionsPageState extends State<AdminTaskSubmissionsPage> {
                 ),
               ],
             ),
-            const SizedBox(height: 18),
+            SizedBox(height: isMobile ? 8 : 18),
             Expanded(
               child: StreamBuilder<QuerySnapshot>(
                 stream: FirebaseFirestore.instance
@@ -187,61 +188,64 @@ class _AdminTaskSubmissionsPageState extends State<AdminTaskSubmissionsPage> {
 
                       return SizedBox(
                         width: double.infinity,
-                        child: DataTable(
-                          columnSpacing: 28,
-                          dataRowMinHeight: 44,
-                          columns: const [
-                            DataColumn(label: Text('School')),
-                            DataColumn(label: Text('Status')),
-                            DataColumn(label: Text('Submitted At')),
-                            DataColumn(label: Text('Action')),
-                          ],
-                          rows: rows.map((row) {
-                            return DataRow(
-                              cells: [
-                                DataCell(Text(row['schoolName'] ?? '')),
-                                DataCell(
-                                  Chip(
-                                    label: Text(row['status']),
-                                    backgroundColor: row['status'] == 'Submitted'
-                                        ? colorScheme.primary.withOpacity(0.18)
-                                        : colorScheme.secondary.withOpacity(0.18),
-                                    labelStyle: TextStyle(
-                                      color: row['status'] == 'Submitted'
-                                          ? colorScheme.primary
-                                          : colorScheme.secondary,
-                                      fontWeight: FontWeight.w600,
+                        child: SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: DataTable(
+                            columnSpacing: isMobile ? 10 : 28,
+                            dataRowMinHeight: isMobile ? 32 : 44,
+                            columns: const [
+                              DataColumn(label: Text('School')),
+                              DataColumn(label: Text('Status')),
+                              DataColumn(label: Text('Submitted At')),
+                              DataColumn(label: Text('Action')),
+                            ],
+                            rows: rows.map((row) {
+                              return DataRow(
+                                cells: [
+                                  DataCell(Text(row['schoolName'] ?? '')),
+                                  DataCell(
+                                    Chip(
+                                      label: Text(row['status']),
+                                      backgroundColor: row['status'] == 'Submitted'
+                                          ? colorScheme.primary.withOpacity(0.18)
+                                          : colorScheme.secondary.withOpacity(0.18),
+                                      labelStyle: TextStyle(
+                                        color: row['status'] == 'Submitted'
+                                            ? colorScheme.primary
+                                            : colorScheme.secondary,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
                                     ),
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
                                   ),
-                                ),
-                                DataCell(Text(
-                                  row['submittedAt'] != null
-                                      ? _formatDate(row['submittedAt'])
-                                      : '-',
-                                )),
-                                DataCell(
-                                  row['status'] == 'Submitted'
-                                      ? TextButton(
-                                          onPressed: () {
-                                            final submission = row['submission'];
-                                            Navigator.of(context).push(
-                                              MaterialPageRoute(
-                                                builder: (_) => AdminSubmissionDetailPage(
-                                                  submission: submission,
-                                                  schoolName: row['schoolName'],
-                                                  taskTitle: widget.taskTitle,
+                                  DataCell(Text(
+                                    row['submittedAt'] != null
+                                        ? _formatDate(row['submittedAt'])
+                                        : '-',
+                                  )),
+                                  DataCell(
+                                    row['status'] == 'Submitted'
+                                        ? TextButton(
+                                            onPressed: () {
+                                              final submission = row['submission'];
+                                              Navigator.of(context).push(
+                                                MaterialPageRoute(
+                                                  builder: (_) => AdminSubmissionDetailPage(
+                                                    submission: submission,
+                                                    schoolName: row['schoolName'],
+                                                    taskTitle: widget.taskTitle,
+                                                  ),
                                                 ),
-                                              ),
-                                            );
-                                          },
-                                          child: const Text('View'),
-                                        )
-                                      : const SizedBox(),
-                                ),
-                              ],
-                            );
-                          }).toList(),
+                                              );
+                                            },
+                                            child: const Text('View'),
+                                          )
+                                        : const SizedBox(),
+                                  ),
+                                ],
+                              );
+                            }).toList(),
+                          ),
                         ),
                       );
                     },
@@ -279,6 +283,7 @@ class AdminSubmissionDetailPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final isMobile = MediaQuery.of(context).size.width < 700;
     final data = submission.data() as Map<String, dynamic>;
     final submittedAt = data['submittedAt'] != null
         ? (data['submittedAt'] as Timestamp).toDate()
@@ -321,24 +326,24 @@ class AdminSubmissionDetailPage extends StatelessWidget {
         foregroundColor: Colors.white,
       ),
       body: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: EdgeInsets.all(isMobile ? 10 : 24),
         child: ListView(
           children: [
             Text(
               taskTitle,
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22, color: colorScheme.primary),
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: isMobile ? 16 : 22, color: colorScheme.primary),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: isMobile ? 4 : 8),
             Text(
               'School: $schoolName',
-              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+              style: TextStyle(fontWeight: FontWeight.w600, fontSize: isMobile ? 13 : 16),
             ),
-            const SizedBox(height: 4),
+            SizedBox(height: isMobile ? 2 : 4),
             Text(
               'Submitted At: ${submittedAt != null ? _formatDate(submittedAt) : "-"}',
-              style: const TextStyle(fontSize: 15, color: Colors.black87),
+              style: TextStyle(fontSize: isMobile ? 12 : 15, color: Colors.black87),
             ),
-            const Divider(height: 32, thickness: 1.2),
+            Divider(height: isMobile ? 16 : 32, thickness: 1.2),
 
             // Pre-Drill Section
             Text('Pre-Drill:', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),

@@ -15,11 +15,11 @@ class AdminExportsPage extends StatelessWidget {
           child: Padding(
             padding: EdgeInsets.all(isMobile ? 8 : 24),
             child: Card(
-              color: Colors.white, // Content background is white
+              color: Colors.white,
               elevation: 7,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(isMobile ? 12 : 22)),
               child: Padding(
-                padding: EdgeInsets.all(isMobile ? 18 : 40),
+                padding: EdgeInsets.all(isMobile ? 12 : 40),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -34,24 +34,26 @@ class AdminExportsPage extends StatelessWidget {
                     ElevatedButton.icon(
                       onPressed: () {},
                       icon: Icon(Icons.picture_as_pdf, color: colorScheme.primary),
-                      label: Text('Export to PDF (placeholder)', style: TextStyle(color: colorScheme.primary)),
+                      label: Text('Export to PDF (placeholder)', style: TextStyle(color: colorScheme.primary, fontSize: isMobile ? 13 : null)),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: colorScheme.primary.withOpacity(0.13),
                         foregroundColor: colorScheme.primary,
                         elevation: 0,
                         shape: const StadiumBorder(),
+                        padding: EdgeInsets.symmetric(horizontal: isMobile ? 10 : 18, vertical: isMobile ? 8 : 14),
                       ),
                     ),
                     SizedBox(height: isMobile ? 8 : 16),
                     ElevatedButton.icon(
                       onPressed: () {},
                       icon: Icon(Icons.table_chart, color: colorScheme.secondary),
-                      label: Text('Export to Excel (placeholder)', style: TextStyle(color: colorScheme.secondary)),
+                      label: Text('Export to Excel (placeholder)', style: TextStyle(color: colorScheme.secondary, fontSize: isMobile ? 13 : null)),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: colorScheme.secondary.withOpacity(0.13),
                         foregroundColor: colorScheme.secondary,
                         elevation: 0,
                         shape: const StadiumBorder(),
+                        padding: EdgeInsets.symmetric(horizontal: isMobile ? 10 : 18, vertical: isMobile ? 8 : 14),
                       ),
                     ),
                   ],
