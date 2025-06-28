@@ -130,26 +130,37 @@ Google Drive Link"
         const SnackBar(content: Text('Exporting submissions...')),
       );
 
+      // --- Fetch all schools ---
+      final usersSnap = await FirebaseFirestore.instance
+          .collection('users')
+          .where('role', isEqualTo: 'school')
+          .get();
+      final allSchools = usersSnap.docs.map((doc) => {
+        'id': doc.id,
+        ...doc.data(),
+      }).toList();
+
+      // --- Fetch all submissions for the task ---
       final submissionsSnap = await FirebaseFirestore.instance
           .collection('submissions')
           .where('taskId', isEqualTo: taskId)
           .get();
 
-      if (submissionsSnap.docs.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No submissions to export.')),
-        );
-        return;
+      // --- Map schoolId to submission ---
+      final Map<String, Map<String, dynamic>> schoolIdToSubmission = {};
+      for (final doc in submissionsSnap.docs) {
+        final data = doc.data() as Map<String, dynamic>;
+        if (data['schoolId'] != null) {
+          schoolIdToSubmission[data['schoolId']] = data;
+        }
       }
 
-      // --- 1. Collect all fields and their prefixes ---
+      // --- 1. Collect all fields and their prefixes from all submissions ---
       Set<String> fieldSet = {};
       Map<String, String> fieldKeyToHeader = {};
       Map<String, String> fieldKeyToPrefix = {};
-      Set<String> userUids = {};
       for (final doc in submissionsSnap.docs) {
         final data = doc.data() as Map<String, dynamic>;
-        if (data['schooluid'] != null) userUids.add(data['schooluid']);
         void collectKeys(Map<String, dynamic> map, [String prefix = '']) {
           map.forEach((k, v) {
             if (v is Map<String, dynamic>) {
@@ -162,18 +173,6 @@ Google Drive Link"
           });
         }
         collectKeys(data);
-      }
-
-      // --- 2. Fetch user info for all schooluids ---
-      Map<String, Map<String, dynamic>> userInfo = {};
-      if (userUids.isNotEmpty) {
-        final userDocs = await FirebaseFirestore.instance
-            .collection('users')
-            .where(FieldPath.documentId, whereIn: userUids.toList())
-            .get();
-        for (final doc in userDocs.docs) {
-          userInfo[doc.id] = doc.data();
-        }
       }
 
       // --- 3. Define desired order ---
@@ -226,7 +225,7 @@ Google Drive Link"
 
       // --- Prepare prefix row and header row (prefix only once, skip "users") ---
       List<String> prefixRow = ['No.', '', ''];
-      List<String> headerRow = ['No.', 'schoolID', 'name'];
+      List<String> headerRow = ['No.', 'schoolID', 'School Names']; // <-- Change "name" to "School Names"
       String lastPrefix = '';
       for (final f in filteredFields) {
         final prefix = fieldKeyToPrefix[f] ?? '';
@@ -241,47 +240,53 @@ Google Drive Link"
         headerRow.add(fieldKeyToHeader[f] ?? f);
       }
 
-      // --- 5. Prepare CSV rows ---
+      // --- 5. Prepare CSV rows for all schools ---
       List<List<dynamic>> csvRows = [];
       csvRows.add(prefixRow);
       csvRows.add(headerRow);
       int rowNum = 1;
-      for (final doc in submissionsSnap.docs) {
-        final data = doc.data() as Map<String, dynamic>;
+      for (final school in allSchools) {
+        final schoolId = school['id'] ?? '';
+        final schoolID = school['schoolId']?.toString() ?? '';
+        final schoolName = school['name']?.toString() ?? '';
+        final submission = schoolIdToSubmission[schoolId];
         Map<String, dynamic> flat = {};
-        void flatten(Map<String, dynamic> map, [String prefix = '']) {
-          map.forEach((k, v) {
-            if (v is Map<String, dynamic>) {
-              flatten(v, '$prefix$k.');
-            } else if (v is Timestamp) {
-              flat['$prefix$k'] = v.toDate().toIso8601String();
-            } else if (v is List) {
-              flat['$prefix$k'] = v.join(', ');
-            } else if (v is bool) {
-              flat['$prefix$k'] = v ? 'Yes' : 'No';
-            } else {
-              flat['$prefix$k'] = v;
-            }
-          });
+        if (submission != null) {
+          void flatten(Map<String, dynamic> map, [String prefix = '']) {
+            map.forEach((k, v) {
+              if (v is Map<String, dynamic>) {
+                flatten(v, '$prefix$k.');
+              } else if (v is Timestamp) {
+                flat['$prefix$k'] = v.toDate().toIso8601String();
+              } else if (v is List) {
+                flat['$prefix$k'] = v.join(', ');
+              } else if (v is bool) {
+                flat['$prefix$k'] = v ? 'Yes' : 'No';
+              } else {
+                flat['$prefix$k'] = v;
+              }
+            });
+          }
+          flatten(submission);
         }
-        flatten(data);
-
-        // Get user info
-        String schoolUid = data['schoolId'] ?? '';
-        String schoolID = '';
-        String name = '';
-        if (schoolUid.isNotEmpty && userInfo.containsKey(schoolUid)) {
-          schoolID = userInfo[schoolUid]?['schoolId']?.toString() ?? '';
-          name = userInfo[schoolUid]?['name']?.toString() ?? '';
-        }
-
         csvRows.add([
           rowNum++,
           schoolID,
-          name,
+          schoolName,
           ...filteredFields.map((f) => flat[f] ?? ''),
         ]);
       }
+
+      // --- Add 5 empty rows ---
+      for (int i = 0; i < 5; i++) {
+        csvRows.add([]);
+      }
+
+      // --- Add signature rows ---
+      csvRows.add(['Prepared by:', '', '', 'Noted by:']);
+      csvRows.add(['_________________________', '', '', '_________________________']);
+      csvRows.add(['MARIBETH A. BALDONADO', '', '', 'RENATO T. BALLESTEROS PhD, CESO V']);
+      csvRows.add(['Date:', '', '', 'Date:']);
 
       // --- 6. Convert to CSV string and save ---
       String csvString = const ListToCsvConverter().convert(csvRows);
@@ -294,7 +299,7 @@ Google Drive Link"
       );
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Exported ${csvRows.length - 2} submissions for "$taskTitle".')),
+        SnackBar(content: Text('Exported ${csvRows.length - 2} schools for "$taskTitle".')),
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
