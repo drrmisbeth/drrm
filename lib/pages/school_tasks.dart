@@ -934,7 +934,7 @@ class _SchoolSubmitFormPageState extends State<SchoolSubmitFormPage> {
         child: Padding(
           padding: EdgeInsets.symmetric(horizontal: isMobile ? 4 : 32, vertical: isMobile ? 8 : 18),
           child: Card(
-            elevation: 0,
+            elevation: 0, // Remove shadow
             color: colorScheme.secondary.withOpacity(0.08),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
             child: Padding(

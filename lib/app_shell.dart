@@ -6,7 +6,7 @@ import 'pages/school_tasks.dart' as tasks;
 import 'pages/admin_dashboard.dart';
 import 'pages/admin_announcements.dart';
 import 'pages/admin_tasks_manager.dart';
-import 'main.dart';
+import 'login_screen.dart'; // <-- change from 'main.dart' to 'login_screen.dart'
 import 'user_role.dart'; // Use the shared UserRole enum
 
 class AppShell extends StatefulWidget {
@@ -27,9 +27,7 @@ class _AppShellState extends State<AppShell> {
           onToggleDarkMode: widget.onToggleDarkMode,
           darkMode: widget.darkMode,
         ),
-        SchoolAnnouncementsPage(
-          darkMode: widget.darkMode,
-        ),
+        SchoolAnnouncementsPage(),
         tasks.SchoolTasksPage(
           onToggleDarkMode: widget.onToggleDarkMode,
           darkMode: widget.darkMode,

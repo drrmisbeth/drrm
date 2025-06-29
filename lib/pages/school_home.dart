@@ -9,142 +9,153 @@ class SchoolHomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    return Container(
-      color: Colors.white, // Content background is white
+    final isMobile = MediaQuery.of(context).size.width < 700;
+    return SingleChildScrollView(
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+        padding: EdgeInsets.all(isMobile ? 10 : 32),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Welcome, School User!',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 32,
-                color: Colors.black,
-                letterSpacing: 1.2,
+            // Welcome Banner
+            Container(
+              width: double.infinity,
+              padding: EdgeInsets.symmetric(vertical: isMobile ? 18 : 32, horizontal: isMobile ? 14 : 32),
+              decoration: BoxDecoration(
+                color: colorScheme.primary.withOpacity(0.13),
+                borderRadius: BorderRadius.circular(18),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.school, color: colorScheme.primary, size: isMobile ? 32 : 48),
+                  SizedBox(width: isMobile ? 10 : 24),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Welcome to DRRMIS',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: isMobile ? 18 : 28,
+                            color: colorScheme.primary,
+                          ),
+                        ),
+                        SizedBox(height: 4),
+                        Text(
+                          'Your dashboard for disaster risk reduction and management in schools.',
+                          style: TextStyle(fontSize: isMobile ? 13 : 16, color: Colors.black87),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 32),
+            SizedBox(height: isMobile ? 18 : 32),
+            // Quick Summary Cards
+            Wrap(
+              spacing: isMobile ? 10 : 24,
+              runSpacing: isMobile ? 10 : 18,
+              children: [
+                GestureDetector(
+                  onTap: () {
+                    DefaultTabController.of(context)?.animateTo(0);
+                  },
+                  child: _summaryCard(
+                    icon: Icons.assignment_turned_in,
+                    label: 'Submission Tasks',
+                    value: 'View and submit required drills',
+                    color: colorScheme.primary,
+                    context: context,
+                  ),
+                ),
+                GestureDetector(
+                  onTap: () {
+                    DefaultTabController.of(context)?.animateTo(1);
+                  },
+                  child: _summaryCard(
+                    icon: Icons.campaign_rounded,
+                    label: 'Announcements',
+                    value: 'See latest updates',
+                    color: colorScheme.secondary,
+                    context: context,
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: isMobile ? 18 : 32),
+            // Info Card
             Card(
-              elevation: 0,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
-              color: colorScheme.primary.withOpacity(0.10),
+              elevation: 2,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+              color: Colors.white,
               child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 18),
-                child: Row(
+                padding: EdgeInsets.all(isMobile ? 12 : 24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    CircleAvatar(
-                      backgroundColor: colorScheme.primary,
-                      child: Icon(Icons.warning_amber, color: Colors.white, size: 36),
-                      radius: 32,
-                    ),
-                    const SizedBox(width: 18),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Upcoming Submission: Earthquake Drill',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w700,
-                              fontSize: 21,
-                              color: colorScheme.primary,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text('Due: June 30, 2024', style: TextStyle(fontSize: 15, color: Colors.black)),
-                        ],
+                    Text(
+                      'How to Use',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: isMobile ? 15 : 20,
+                        color: colorScheme.primary,
                       ),
                     ),
-                    ElevatedButton.icon(
-                      style: ElevatedButton.styleFrom(
-                        shape: const StadiumBorder(),
-                        backgroundColor: colorScheme.primary,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
-                        textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                        elevation: 0,
-                      ),
-                      onPressed: () {},
-                      icon: const Icon(Icons.upload_rounded, size: 22),
-                      label: const Text('Submit'),
+                    SizedBox(height: 8),
+                    Text(
+                      '• Check for new submission tasks regularly.\n'
+                      '• Submit your drill reports before the deadline.\n'
+                      '• Review announcements for important updates.\n'
+                      '• Track your previous submissions in "My Submissions".',
+                      style: TextStyle(fontSize: isMobile ? 13 : 16),
                     ),
                   ],
                 ),
               ),
             ),
-            const SizedBox(height: 40),
-            Text(
-              'Latest Announcements',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 22,
-                color: Colors.black,
-                letterSpacing: 0.8,
-              ),
-            ),
-            const SizedBox(height: 18),
-            StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance
-                  .collection('announcements')
-                  .orderBy('createdAt', descending: true)
-                  .limit(2)
-                  .snapshots(),
-              builder: (context, snapshot) {
-                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                  return Card(
-                    elevation: 2,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-                    child: ListTile(
-                      title: Text('No announcements yet.', style: TextStyle(color: Colors.grey[700])),
-                    ),
-                  );
-                }
-                final docs = snapshot.data!.docs;
-                return Column(
-                  children: docs.map((doc) {
-                    final data = doc.data() as Map<String, dynamic>;
-                    final createdAt = (data['createdAt'] as Timestamp?)?.toDate();
-                    return Card(
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
-                      color: colorScheme.secondary.withOpacity(0.13),
-                      margin: const EdgeInsets.only(bottom: 18),
-                      child: ListTile(
-                        leading: CircleAvatar(
-                          backgroundColor: colorScheme.secondary,
-                          child: Icon(Icons.campaign, color: Colors.white, size: 28),
-                          radius: 26,
-                        ),
-                        title: Text(
-                          data['title'] ?? '',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w700,
-                            fontSize: 17,
-                            color: Colors.black,
-                          ),
-                        ),
-                        subtitle: Padding(
-                          padding: const EdgeInsets.only(top: 4),
-                          child: Text(
-                            data['description'] ?? '',
-                            style: const TextStyle(fontSize: 14, color: Colors.black87),
-                          ),
-                        ),
-                        trailing: Text(
-                          createdAt != null
-                              ? '${createdAt.month.toString().padLeft(2, '0')}/${createdAt.day.toString().padLeft(2, '0')}/${createdAt.year}'
-                              : '',
-                          style: TextStyle(color: Colors.grey[600], fontSize: 13),
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                );
-              },
-            ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _summaryCard({
+    required IconData icon,
+    required String label,
+    required String value,
+    required Color color,
+    required BuildContext context,
+  }) {
+    final isMobile = MediaQuery.of(context).size.width < 700;
+    return SizedBox(
+      width: isMobile ? double.infinity : 260,
+      child: Card(
+        elevation: 1,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        color: Colors.white, // Remove dark/grey background
+        child: Padding(
+          padding: EdgeInsets.symmetric(vertical: isMobile ? 12 : 18, horizontal: isMobile ? 10 : 18),
+          child: Row(
+            children: [
+              CircleAvatar(
+                backgroundColor: color.withOpacity(0.18),
+                child: Icon(icon, color: color, size: isMobile ? 22 : 28),
+                radius: isMobile ? 20 : 26,
+              ),
+              SizedBox(width: isMobile ? 10 : 18),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(label, style: TextStyle(fontWeight: FontWeight.bold, fontSize: isMobile ? 14 : 16, color: color)),
+                    SizedBox(height: 2),
+                    Text(value, style: TextStyle(fontSize: isMobile ? 11 : 13, color: Colors.black87)),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
