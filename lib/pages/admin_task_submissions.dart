@@ -13,9 +13,13 @@ class AdminTaskSubmissionsPage extends StatefulWidget {
 class _AdminTaskSubmissionsPageState extends State<AdminTaskSubmissionsPage> {
   String _searchText = '';
   String? _filterStatus;
-  String? _filterYear; // <-- Add this line
+  String? _filterYear;
   String _sortField = 'submittedAt';
   bool _sortAsc = false;
+
+  // --- Pagination state ---
+  int _currentPage = 0;
+  final int _rowsPerPage = 10;
 
   @override
   Widget build(BuildContext context) {
@@ -162,7 +166,6 @@ class _AdminTaskSubmissionsPageState extends State<AdminTaskSubmissionsPage> {
                       if (_filterStatus != null) {
                         rows = rows.where((row) => row['status'] == _filterStatus).toList();
                       }
-                      // --- Year filter ---
                       if (_filterYear != null) {
                         rows = rows.where((row) {
                           final submittedAt = row['submittedAt'] as DateTime?;
@@ -186,67 +189,106 @@ class _AdminTaskSubmissionsPageState extends State<AdminTaskSubmissionsPage> {
                         return _sortAsc ? cmp : -cmp;
                       });
 
-                      return SizedBox(
-                        width: double.infinity,
-                        child: SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: DataTable(
-                            columnSpacing: isMobile ? 10 : 28,
-                            dataRowMinHeight: isMobile ? 32 : 44,
-                            columns: const [
-                              DataColumn(label: Text('School')),
-                              DataColumn(label: Text('Status')),
-                              DataColumn(label: Text('Submitted At')),
-                              DataColumn(label: Text('Action')),
-                            ],
-                            rows: rows.map((row) {
-                              return DataRow(
-                                cells: [
-                                  DataCell(Text(row['schoolName'] ?? '')),
-                                  DataCell(
-                                    Chip(
-                                      label: Text(row['status']),
-                                      backgroundColor: row['status'] == 'Submitted'
-                                          ? colorScheme.primary.withOpacity(0.18)
-                                          : colorScheme.secondary.withOpacity(0.18),
-                                      labelStyle: TextStyle(
-                                        color: row['status'] == 'Submitted'
-                                            ? colorScheme.primary
-                                            : colorScheme.secondary,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
-                                    ),
+                      // --- Pagination ---
+                      final totalRows = rows.length;
+                      final totalPages = (totalRows / _rowsPerPage).ceil();
+                      final start = _currentPage * _rowsPerPage;
+                      final end = (start + _rowsPerPage) > totalRows ? totalRows : (start + _rowsPerPage);
+                      final pageRows = rows.sublist(
+                        start < totalRows ? start : 0,
+                        end < totalRows ? end : totalRows,
+                      );
+
+                      return Column(
+                        children: [
+                          Expanded(
+                            child: SizedBox(
+                              width: double.infinity,
+                              child: SingleChildScrollView(
+                                scrollDirection: Axis.horizontal,
+                                child: DataTable(
+                                  columnSpacing: isMobile ? 10 : 28,
+                                  dataRowMinHeight: isMobile ? 32 : 44,
+                                  columns: const [
+                                    DataColumn(label: Text('School')),
+                                    DataColumn(label: Text('Status')),
+                                    DataColumn(label: Text('Submitted At')),
+                                    DataColumn(label: Text('Action')),
+                                  ],
+                                  rows: pageRows.map((row) {
+                                    return DataRow(
+                                      cells: [
+                                        DataCell(Text(row['schoolName'] ?? '')),
+                                        DataCell(
+                                          Chip(
+                                            label: Text(row['status']),
+                                            backgroundColor: row['status'] == 'Submitted'
+                                                ? colorScheme.primary.withOpacity(0.18)
+                                                : colorScheme.secondary.withOpacity(0.18),
+                                            labelStyle: TextStyle(
+                                              color: row['status'] == 'Submitted'
+                                                  ? colorScheme.primary
+                                                  : colorScheme.secondary,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+                                          ),
+                                        ),
+                                        DataCell(Text(
+                                          row['submittedAt'] != null
+                                              ? _formatDate(row['submittedAt'])
+                                              : '-',
+                                        )),
+                                        DataCell(
+                                          row['status'] == 'Submitted'
+                                              ? TextButton(
+                                                  onPressed: () {
+                                                    final submission = row['submission'];
+                                                    Navigator.of(context).push(
+                                                      MaterialPageRoute(
+                                                        builder: (_) => AdminSubmissionDetailPage(
+                                                          submission: submission,
+                                                          schoolName: row['schoolName'],
+                                                          taskTitle: widget.taskTitle,
+                                                        ),
+                                                      ),
+                                                    );
+                                                  },
+                                                  child: const Text('View'),
+                                                )
+                                              : const SizedBox(),
+                                        ),
+                                      ],
+                                    );
+                                  }).toList(),
+                                ),
+                              ),
+                            ),
+                          ),
+                          // --- Pagination controls ---
+                          if (totalPages > 1)
+                            Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  IconButton(
+                                    icon: const Icon(Icons.chevron_left),
+                                    onPressed: _currentPage > 0
+                                        ? () => setState(() => _currentPage--)
+                                        : null,
                                   ),
-                                  DataCell(Text(
-                                    row['submittedAt'] != null
-                                        ? _formatDate(row['submittedAt'])
-                                        : '-',
-                                  )),
-                                  DataCell(
-                                    row['status'] == 'Submitted'
-                                        ? TextButton(
-                                            onPressed: () {
-                                              final submission = row['submission'];
-                                              Navigator.of(context).push(
-                                                MaterialPageRoute(
-                                                  builder: (_) => AdminSubmissionDetailPage(
-                                                    submission: submission,
-                                                    schoolName: row['schoolName'],
-                                                    taskTitle: widget.taskTitle,
-                                                  ),
-                                                ),
-                                              );
-                                            },
-                                            child: const Text('View'),
-                                          )
-                                        : const SizedBox(),
+                                  Text('Page ${_currentPage + 1} of $totalPages'),
+                                  IconButton(
+                                    icon: const Icon(Icons.chevron_right),
+                                    onPressed: (_currentPage < totalPages - 1)
+                                        ? () => setState(() => _currentPage++)
+                                        : null,
                                   ),
                                 ],
-                              );
-                            }).toList(),
-                          ),
-                        ),
+                              ),
+                            ),
+                        ],
                       );
                     },
                   );

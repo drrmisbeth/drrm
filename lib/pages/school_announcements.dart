@@ -96,7 +96,7 @@ class SchoolAnnouncementsPage extends StatelessWidget {
                           : [];
 
                       // Email-style fields
-                      final sender = data['sender'] ?? 'School Admin';
+                      final sender = data['sender'] ?? 'Admin';
                       final subject = data['title'] ?? '';
                       final body = data['description'] ?? '';
                       final cc = data['cc'] ?? '';

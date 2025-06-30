@@ -46,7 +46,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '995406752835',
     projectId: 'drrmis-aeddc',
     authDomain: 'drrmis-aeddc.firebaseapp.com',
-    storageBucket: 'drrmis-aeddc.firebasestorage.app',
+    storageBucket: 'drrmis-aeddc.appspot.com',
     measurementId: 'G-179SGNCZBW',
   );
 
@@ -55,7 +55,7 @@ class DefaultFirebaseOptions {
     appId: '1:995406752835:android:626e8a3736c54626f838f6',
     messagingSenderId: '995406752835',
     projectId: 'drrmis-aeddc',
-    storageBucket: 'drrmis-aeddc.firebasestorage.app',
+    storageBucket: 'drrmis-aeddc.appspot.com',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
@@ -63,7 +63,7 @@ class DefaultFirebaseOptions {
     appId: '1:995406752835:ios:7abeae5ef8acfd3cf838f6',
     messagingSenderId: '995406752835',
     projectId: 'drrmis-aeddc',
-    storageBucket: 'drrmis-aeddc.firebasestorage.app',
+    storageBucket: 'drrmis-aeddc.appspot.com',
     iosClientId: '995406752835-q83afdifcb8rjhb7ge2jkrhkna2voqpg.apps.googleusercontent.com',
     iosBundleId: 'com.example.drrm',
   );
@@ -73,7 +73,7 @@ class DefaultFirebaseOptions {
     appId: '1:995406752835:ios:7abeae5ef8acfd3cf838f6',
     messagingSenderId: '995406752835',
     projectId: 'drrmis-aeddc',
-    storageBucket: 'drrmis-aeddc.firebasestorage.app',
+    storageBucket: 'drrmis-aeddc.appspot.com',
     iosClientId: '995406752835-q83afdifcb8rjhb7ge2jkrhkna2voqpg.apps.googleusercontent.com',
     iosBundleId: 'com.example.drrm',
   );
@@ -84,7 +84,8 @@ class DefaultFirebaseOptions {
     messagingSenderId: '995406752835',
     projectId: 'drrmis-aeddc',
     authDomain: 'drrmis-aeddc.firebaseapp.com',
-    storageBucket: 'drrmis-aeddc.firebasestorage.app',
+    storageBucket: 'drrmis-aeddc.appspot.com',
     measurementId: 'G-X1NF37V2YJ',
   );
 }
+// No changes needed. This file only contains Firebase configuration.

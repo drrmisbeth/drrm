@@ -132,3 +132,4 @@ class _MyAppState extends State<MyApp> {
     );
   }
 }
+// No changes needed. All data is already fetched from Firebase and Supabase.

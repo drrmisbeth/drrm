@@ -78,14 +78,51 @@ class _LoginScreenState extends State<LoginScreen> {
     });
   }
 
+  Future<void> _forgotPassword() async {
+    final email = _usernameController.text.trim();
+    if (email.isEmpty) {
+      setState(() {
+        _error = 'Enter your email to reset password.';
+      });
+      return;
+    }
+    try {
+      await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Password reset email sent.')),
+        );
+      }
+    } on FirebaseAuthException catch (e) {
+      setState(() {
+        _error = e.message ?? 'Failed to send reset email';
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    // Use only black, white, grey for color scheme
+    final Color black = Colors.black;
+    final Color white = Colors.white;
+    final Color grey = Colors.grey[700]!;
+
+    final colorScheme = ColorScheme.light(
+      primary: black,
+      secondary: grey,
+      background: white,
+      surface: white,
+      onPrimary: white,
+      onSecondary: black,
+      onBackground: black,
+      onSurface: black,
+      brightness: Brightness.light,
+    );
     return Scaffold(
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        color: Theme.of(context).scaffoldBackgroundColor,
+        color: black, // <-- Set background as black
         child: Center(
           child: Container(
             constraints: const BoxConstraints(maxWidth: 420),
@@ -102,17 +139,17 @@ class _LoginScreenState extends State<LoginScreen> {
                     Container(
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: colorScheme.primary.withOpacity(0.13),
+                        color: black.withOpacity(0.13),
                         boxShadow: [
                           BoxShadow(
-                            color: colorScheme.primary.withOpacity(0.10),
+                            color: black.withOpacity(0.10),
                             blurRadius: 24,
                             offset: const Offset(0, 8),
                           ),
                         ],
                       ),
                       padding: const EdgeInsets.all(28),
-                      child: Icon(Icons.shield, color: colorScheme.primary, size: 48),
+                      child: Icon(Icons.shield, color: black, size: 48),
                     ),
                     const SizedBox(height: 24),
                     Text(
@@ -120,7 +157,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 24,
-                        color: colorScheme.primary,
+                        color: black,
                         letterSpacing: 1.1,
                       ),
                       textAlign: TextAlign.center,
@@ -129,7 +166,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     Text(
                       'Disaster Risk Reduction & Management Information System',
                       style: TextStyle(
-                        color: Colors.grey[700],
+                        color: grey,
                         fontSize: 14,
                         letterSpacing: 0.2,
                       ),
@@ -144,7 +181,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             controller: _usernameController,
                             decoration: InputDecoration(
                               labelText: 'Username',
-                              prefixIcon: Icon(Icons.person),
+                              prefixIcon: Icon(Icons.person, color: black),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(16),
                               ),
@@ -158,25 +195,38 @@ class _LoginScreenState extends State<LoginScreen> {
                             obscureText: true,
                             decoration: InputDecoration(
                               labelText: 'Password',
-                              prefixIcon: Icon(Icons.lock),
+                              prefixIcon: Icon(Icons.lock, color: black),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(16),
                               ),
                               contentPadding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
                             ),
                             validator: (v) => v == null || v.isEmpty ? 'Enter password' : null,
+                            onFieldSubmitted: (_) {
+                              if (_formKey.currentState?.validate() ?? false) {
+                                _login();
+                              }
+                            },
                           ),
                           if (_error != null) ...[
                             const SizedBox(height: 16),
                             Text(_error!, style: const TextStyle(color: Colors.red)),
                           ],
+                          const SizedBox(height: 18),
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: TextButton(
+                              onPressed: _loading ? null : _forgotPassword,
+                              child: const Text('Forgot password?', style: TextStyle(color: Colors.black)),
+                            ),
+                          ),
                           const SizedBox(height: 28),
                           SizedBox(
                             width: double.infinity,
                             child: ElevatedButton(
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: colorScheme.primary,
-                                foregroundColor: Colors.white,
+                                backgroundColor: black,
+                                foregroundColor: white,
                                 shape: StadiumBorder(),
                                 padding: const EdgeInsets.symmetric(vertical: 18),
                                 textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),

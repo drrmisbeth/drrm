@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SchoolTasksPage extends StatelessWidget {
@@ -54,7 +53,7 @@ class SchoolTasksPage extends StatelessWidget {
                       return StreamBuilder<QuerySnapshot>(
                         stream: FirebaseFirestore.instance
                             .collection('submissions')
-                            .where('schoolId', isEqualTo: user?.uid)
+                            .where('schooluid', isEqualTo: user?.uid)
                             .snapshots(),
                         builder: (context, subSnap) {
                           if (!subSnap.hasData) {
@@ -149,33 +148,37 @@ class SchoolTasksPage extends StatelessWidget {
                                                 ),
                                         ),
                                         DataCell(
+                                          // Allow editing: If already submitted, show "Edit" button instead of disabled "Submitted"
                                           isSubmitted
-                                              ? Row(
-                                                  children: [
-                                                    ElevatedButton.icon(
+                                              ? ElevatedButton.icon(
+                                                  style: ElevatedButton.styleFrom(
+                                                    shape: const StadiumBorder(),
+                                                    backgroundColor: Colors.grey[400],
+                                                    foregroundColor: Colors.white,
+                                                    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                                                    textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                                                    elevation: 0,
+                                                  ),
+                                                  onPressed: () {
+                                                    Navigator.of(context).push(
+                                                      MaterialPageRoute(
+                                                        builder: (_) => SchoolSubmitFormPage(taskId: doc.id),
+                                                      ),
+                                                    );
+                                                  },
+                                                  icon: const Icon(Icons.edit, size: 20),
+                                                  label: const Text('Edit Submission'),
+                                                )
+                                              : isActive
+                                                  ? ElevatedButton.icon(
                                                       style: ElevatedButton.styleFrom(
                                                         shape: const StadiumBorder(),
-                                                        backgroundColor: Colors.grey[400],
+                                                        backgroundColor: colorScheme.primary,
                                                         foregroundColor: Colors.white,
                                                         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
                                                         textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                                                         elevation: 0,
                                                       ),
-                                                      onPressed: null,
-                                                      icon: const Icon(Icons.check, size: 20),
-                                                      label: const Text('Submitted'),
-                                                    ),
-                                                    const SizedBox(width: 8),
-                                                    OutlinedButton.icon(
-                                                      style: OutlinedButton.styleFrom(
-                                                        shape: const StadiumBorder(),
-                                                        side: BorderSide(color: colorScheme.primary, width: 2),
-                                                        foregroundColor: colorScheme.primary,
-                                                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                                                        textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-                                                      ),
-                                                      icon: const Icon(Icons.edit, size: 20),
-                                                      label: const Text('Edit'),
                                                       onPressed: () {
                                                         Navigator.of(context).push(
                                                           MaterialPageRoute(
@@ -183,30 +186,22 @@ class SchoolTasksPage extends StatelessWidget {
                                                           ),
                                                         );
                                                       },
+                                                      icon: const Icon(Icons.upload_rounded, size: 20),
+                                                      label: const Text('Submit'),
+                                                    )
+                                                  : ElevatedButton.icon(
+                                                      style: ElevatedButton.styleFrom(
+                                                        shape: const StadiumBorder(),
+                                                        backgroundColor: Colors.grey[300],
+                                                        foregroundColor: Colors.white,
+                                                        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                                                        textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                                                        elevation: 0,
+                                                      ),
+                                                      onPressed: null,
+                                                      icon: const Icon(Icons.lock, size: 20),
+                                                      label: const Text('Closed'),
                                                     ),
-                                                  ],
-                                                )
-                                              : ElevatedButton.icon(
-                                                  style: ElevatedButton.styleFrom(
-                                                    shape: const StadiumBorder(),
-                                                    backgroundColor: colorScheme.primary,
-                                                    foregroundColor: Colors.white,
-                                                    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-                                                    textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-                                                    elevation: 0,
-                                                  ),
-                                                  onPressed: isActive
-                                                      ? () {
-                                                          Navigator.of(context).push(
-                                                            MaterialPageRoute(
-                                                              builder: (_) => SchoolSubmitFormPage(taskId: doc.id),
-                                                            ),
-                                                          );
-                                                        }
-                                                      : null,
-                                                  icon: const Icon(Icons.upload_rounded, size: 20),
-                                                  label: const Text('Submit'),
-                                                ),
                                         ),
                                       ],
                                     );
@@ -287,18 +282,15 @@ class _SchoolSubmitFormPageState extends State<SchoolSubmitFormPage> {
   bool? reviewedContingencyPlan;
   final TextEditingController issuesConcerns = TextEditingController();
 
-  // File upload state
-  List<PlatformFile> _pickedFiles = [];
-  List<String> _uploadedUrls = [];
-  bool _uploadingFiles = false;
-  static const int maxTotalBytes = 50 * 1024 * 1024; // 50MB
-
   // New: Controller for external links
   final TextEditingController linksController = TextEditingController();
 
   // --- NEW: For edit mode ---
   bool _loadingSubmission = true;
   String? _submissionId; // For updating existing submission
+
+  // Add this flag
+  bool _alreadySubmitted = false;
 
   @override
   void initState() {
@@ -309,9 +301,10 @@ class _SchoolSubmitFormPageState extends State<SchoolSubmitFormPage> {
   Future<void> _loadSubmissionIfExists() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
+    // Find submission by schooluid and taskId
     final snap = await FirebaseFirestore.instance
         .collection('submissions')
-        .where('schoolId', isEqualTo: user.uid)
+        .where('schooluid', isEqualTo: user.uid)
         .where('taskId', isEqualTo: widget.taskId)
         .limit(1)
         .get();
@@ -319,6 +312,7 @@ class _SchoolSubmitFormPageState extends State<SchoolSubmitFormPage> {
       final doc = snap.docs.first;
       final data = doc.data();
       _submissionId = doc.id;
+      _alreadySubmitted = true;
       // Pre-Drill
       final Map<String, dynamic> pd = Map<String, dynamic>.from(data['preDrill'] ?? {});
       for (final k in preDrill.keys) {
@@ -352,7 +346,6 @@ class _SchoolSubmitFormPageState extends State<SchoolSubmitFormPage> {
       final post = data['postDrill'] ?? {};
       reviewedContingencyPlan = post['reviewedContingencyPlan'];
       issuesConcerns.text = post['issuesConcerns'] ?? '';
-      // Attachments (do not pre-load files, but could show names if desired)
       // External Links
       final links = (data['externalLinks'] ?? []) as List<dynamic>;
       linksController.text = links.join('\n');
@@ -797,61 +790,21 @@ class _SchoolSubmitFormPageState extends State<SchoolSubmitFormPage> {
     }
   }
 
-  Future<void> _pickFiles() async {
-    final result = await FilePicker.platform.pickFiles(
-      allowMultiple: true,
-      withData: true,
-      type: FileType.any,
-    );
-    if (result != null && result.files.isNotEmpty) {
-      final totalBytes = result.files.fold<int>(0, (sum, f) => sum + (f.bytes?.length ?? 0));
-      if (totalBytes > maxTotalBytes) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Total file size exceeds 50MB. Please select smaller files.')),
-        );
-        return;
-      }
-      setState(() {
-        _pickedFiles = result.files;
-      });
-    }
-  }
-
-  Future<List<String>> _uploadFilesToSupabase(List<PlatformFile> files) async {
-    final supabase = Supabase.instance.client;
-    final user = FirebaseAuth.instance.currentUser;
-    List<String> urls = [];
-    for (final file in files) {
-      // Prefix path with Firebase UID for organization
-      final path = '${user?.uid ?? "unknown"}/submissions/${DateTime.now().millisecondsSinceEpoch}_${file.name}';
-      final res = await supabase.storage.from('attachments').uploadBinary(
-        path,
-        file.bytes!,
-        fileOptions: FileOptions(upsert: true),
-      );
-      if (res.isNotEmpty) {
-        final url = supabase.storage.from('attachments').getPublicUrl(path);
-        urls.add(url);
-      }
-    }
-    return urls;
-  }
-
   Future<void> _submit() async {
     setState(() {
       _submitting = true;
-      _uploadingFiles = true;
+      // _uploadingFiles = true;
     });
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
 
-    // Upload files if any
-    List<String> fileUrls = [];
-    if (_pickedFiles.isNotEmpty) {
-      fileUrls = await _uploadFilesToSupabase(_pickedFiles);
-    }
+    // Remove file upload logic
+    // List<String> fileUrls = [];
+    // if (_pickedFiles.isNotEmpty) {
+    //   fileUrls = await _uploadFilesToSupabase(_pickedFiles);
+    // }
 
-    setState(() => _uploadingFiles = false);
+    // setState(() => _uploadingFiles = false);
 
     // Parse links (comma or newline separated)
     final List<String> links = linksController.text
@@ -893,16 +846,29 @@ class _SchoolSubmitFormPageState extends State<SchoolSubmitFormPage> {
         'reviewedContingencyPlan': reviewedContingencyPlan,
         'issuesConcerns': issuesConcerns.text,
       },
-      'attachments': fileUrls,
-      'attachmentNames': _pickedFiles.map((f) => f.name).toList(),
+      // Remove attachments and attachmentNames
+      // 'attachments': fileUrls,
+      // 'attachmentNames': _pickedFiles.map((f) => f.name).toList(),
       'externalLinks': links,
     };
 
-    if (_submissionId != null) {
+    // --- Find existing submission by schooluid and taskId ---
+    String? existingSubmissionId;
+    final snap = await FirebaseFirestore.instance
+        .collection('submissions')
+        .where('schooluid', isEqualTo: user.uid)
+        .where('taskId', isEqualTo: widget.taskId)
+        .limit(1)
+        .get();
+    if (snap.docs.isNotEmpty) {
+      existingSubmissionId = snap.docs.first.id;
+    }
+
+    if (existingSubmissionId != null) {
       // Update existing submission
       await FirebaseFirestore.instance
           .collection('submissions')
-          .doc(_submissionId)
+          .doc(existingSubmissionId)
           .update(submissionData);
     } else {
       // Add new submission
@@ -933,150 +899,150 @@ class _SchoolSubmitFormPageState extends State<SchoolSubmitFormPage> {
       body: SingleChildScrollView(
         child: Padding(
           padding: EdgeInsets.symmetric(horizontal: isMobile ? 4 : 32, vertical: isMobile ? 8 : 18),
-          child: Card(
-            elevation: 0, // Remove shadow
-            color: colorScheme.secondary.withOpacity(0.08),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-            child: Padding(
-              padding: EdgeInsets.symmetric(
-                vertical: isMobile ? 12 : 24,
-                horizontal: isMobile ? 8 : 18,
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(
+                maxWidth: 600,
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Progress indicator
-                  Padding(
-                    padding: EdgeInsets.only(bottom: isMobile ? 10 : 18),
-                    child: Row(
-                      children: List.generate(4, (i) => Expanded(
-                        child: Container(
-                          height: isMobile ? 5 : 7,
-                          margin: EdgeInsets.only(right: i < 3 ? 6 : 0),
-                          decoration: BoxDecoration(
-                            color: i <= _step ? colorScheme.primary : Colors.grey[300],
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                      )),
-                    ),
+              child: Card(
+                elevation: 0,
+                color: colorScheme.secondary.withOpacity(0.08),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                child: Padding(
+                  padding: EdgeInsets.symmetric(
+                    vertical: isMobile ? 12 : 24,
+                    horizontal: isMobile ? 8 : 18,
                   ),
-                  ..._buildStepContent(context),
-                  SizedBox(height: isMobile ? 16 : 24),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      if (_step > 0)
-                        OutlinedButton.icon(
-                          icon: const Icon(Icons.arrow_back),
-                          label: const Text('Back'),
-                          onPressed: _submitting ? null : () => setState(() => _step--),
-                          style: OutlinedButton.styleFrom(
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                            side: BorderSide(color: colorScheme.primary, width: 2),
-                            padding: EdgeInsets.symmetric(
-                              horizontal: isMobile ? 10 : 18,
-                              vertical: isMobile ? 6 : 10,
+                      // Progress indicator
+                      Padding(
+                        padding: EdgeInsets.only(bottom: isMobile ? 10 : 18),
+                        child: Row(
+                          children: List.generate(4, (i) => Expanded(
+                            child: Container(
+                              height: isMobile ? 5 : 7,
+                              margin: EdgeInsets.only(right: i < 3 ? 6 : 0),
+                              decoration: BoxDecoration(
+                                color: i <= _step ? colorScheme.primary : Colors.grey[300],
+                                borderRadius: BorderRadius.circular(8),
+                              ),
                             ),
-                          ),
+                          )),
                         ),
-                      if (_step < 3)
-                        ElevatedButton.icon(
-                          icon: const Icon(Icons.arrow_forward),
-                          label: const Text('Next'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: colorScheme.primary,
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                            padding: EdgeInsets.symmetric(
-                              horizontal: isMobile ? 10 : 18,
-                              vertical: isMobile ? 6 : 10,
+                      ),
+                      ..._buildStepContent(context),
+                      SizedBox(height: isMobile ? 16 : 24),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          if (_step > 0)
+                            OutlinedButton.icon(
+                              icon: const Icon(Icons.arrow_back),
+                              label: const Text('Back'),
+                              onPressed: _submitting ? null : () => setState(() => _step--),
+                              style: OutlinedButton.styleFrom(
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                side: BorderSide(color: colorScheme.primary, width: 2),
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: isMobile ? 10 : 18,
+                                  vertical: isMobile ? 6 : 10,
+                                ),
+                              ),
                             ),
-                          ),
-                          onPressed: _submitting ? null : () => setState(() => _step++),
-                        ),
-                      if (_step == 3)
-                        ElevatedButton.icon(
-                          icon: _submitting
-                              ? SizedBox(
-                                  width: isMobile ? 14 : 18,
-                                  height: isMobile ? 14 : 18,
-                                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                                )
-                              : const Icon(Icons.send_rounded),
-                          label: Padding(
-                            padding: EdgeInsets.symmetric(vertical: isMobile ? 6 : 10),
-                            child: Text(_submitting ? 'Submitting...' : 'Submit', style: TextStyle(fontSize: isMobile ? 14 : 17, fontWeight: FontWeight.bold)),
-                          ),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: colorScheme.primary,
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                            padding: EdgeInsets.symmetric(
-                              horizontal: isMobile ? 10 : 18,
-                              vertical: isMobile ? 6 : 10,
+                          if (_step < 3)
+                            ElevatedButton.icon(
+                              icon: const Icon(Icons.arrow_forward),
+                              label: const Text('Next'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: colorScheme.primary,
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: isMobile ? 10 : 18,
+                                  vertical: isMobile ? 6 : 10,
+                                ),
+                              ),
+                              onPressed: _submitting ? null : () => setState(() => _step++),
                             ),
+                          if (_step == 3)
+                            ElevatedButton.icon(
+                              icon: _alreadySubmitted
+                                  ? const Icon(Icons.check_circle_outline)
+                                  : _submitting
+                                      ? SizedBox(
+                                          width: isMobile ? 14 : 18,
+                                          height: isMobile ? 14 : 18,
+                                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                        )
+                                      : const Icon(Icons.send_rounded),
+                              label: Padding(
+                                padding: EdgeInsets.symmetric(vertical: isMobile ? 6 : 10),
+                                child: Text(
+                                  _alreadySubmitted
+                                    ? 'Already Submitted'
+                                    : (_submitting ? 'Submitting...' : 'Submit'),
+                                  style: TextStyle(fontSize: isMobile ? 14 : 17, fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: _alreadySubmitted ? Colors.grey[400] : colorScheme.primary,
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: isMobile ? 10 : 18,
+                                  vertical: isMobile ? 6 : 10,
+                                ),
+                              ),
+                              onPressed: (_submitting || _alreadySubmitted) ? null : _submit,
+                            ),
+                        ],
+                      ),
+                      // Remove file picker UI (show on last step)
+                      // if (_step == 3) ...[
+                      //   SizedBox(height: isMobile ? 10 : 18),
+                      //   SizedBox(height: isMobile ? 4 : 6),
+                      //   SizedBox(height: isMobile ? 10 : 18),
+                      //   // New: Input for external links
+                      //   Text('External Links (e.g., Google Drive, YouTube, etc.):', style: TextStyle(fontWeight: FontWeight.bold, fontSize: isMobile ? 13 : 15)),
+                      //   SizedBox(height: isMobile ? 4 : 6),
+                      //   TextField(
+                      //     controller: linksController,
+                      //     decoration: InputDecoration(
+                      //       labelText: 'Paste links here (separate by comma or newline)',
+                      //       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      //       prefixIcon: const Icon(Icons.link),
+                      //       filled: true,
+                      //       fillColor: Theme.of(context).colorScheme.secondary.withOpacity(0.07),
+                      //     ),
+                      //     minLines: 1,
+                      //     maxLines: 3,
+                      //   ),
+                      // ],
+                      if (_step == 3) ...[
+                        SizedBox(height: isMobile ? 10 : 18),
+                        SizedBox(height: isMobile ? 4 : 6),
+                        SizedBox(height: isMobile ? 10 : 18),
+                        // Only show external links input
+                        Text('External Links (e.g., Google Drive, YouTube, etc.):', style: TextStyle(fontWeight: FontWeight.bold, fontSize: isMobile ? 13 : 15)),
+                        SizedBox(height: isMobile ? 4 : 6),
+                        TextField(
+                          controller: linksController,
+                          decoration: InputDecoration(
+                            labelText: 'Paste links here (separate by comma or newline)',
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                            prefixIcon: const Icon(Icons.link),
+                            filled: true,
+                            fillColor: Theme.of(context).colorScheme.secondary.withOpacity(0.07),
                           ),
-                          onPressed: _submitting ? null : _submit,
+                          minLines: 1,
+                          maxLines: 3,
                         ),
+                      ],
                     ],
                   ),
-                  // File picker UI (show on last step)
-                  if (_step == 3) ...[
-                    SizedBox(height: isMobile ? 10 : 18),
-                    Text('Attachments (optional, max total 50MB):', style: TextStyle(fontWeight: FontWeight.bold, fontSize: isMobile ? 13 : 15)),
-                    SizedBox(height: isMobile ? 4 : 6),
-                    OutlinedButton.icon(
-                      icon: const Icon(Icons.attach_file),
-                      label: const Text('Add Files'),
-                      onPressed: _uploadingFiles || _submitting ? null : _pickFiles,
-                      style: OutlinedButton.styleFrom(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: isMobile ? 10 : 18,
-                          vertical: isMobile ? 6 : 10,
-                        ),
-                      ),
-                    ),
-                    if (_pickedFiles.isNotEmpty)
-                      Padding(
-                        padding: EdgeInsets.only(top: isMobile ? 4 : 8),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            ..._pickedFiles.map((f) => Row(
-                              children: [
-                                const Icon(Icons.insert_drive_file, size: 18),
-                                SizedBox(width: isMobile ? 3 : 6),
-                                Expanded(child: Text(f.name, overflow: TextOverflow.ellipsis)),
-                                Text('${(f.size / 1024).toStringAsFixed(1)} KB', style: TextStyle(fontSize: isMobile ? 10 : 12, color: Colors.grey)),
-                              ],
-                            )),
-                            SizedBox(height: isMobile ? 2 : 4),
-                            Text(
-                              'Total: ${( _pickedFiles.fold<int>(0, (sum, f) => sum + (f.bytes?.length ?? 0)) / (1024 * 1024)).toStringAsFixed(2)} MB',
-                              style: TextStyle(fontSize: isMobile ? 10 : 12, color: Colors.grey),
-                            ),
-                          ],
-                        ),
-                      ),
-                    SizedBox(height: isMobile ? 10 : 18),
-                    // New: Input for external links
-                    Text('External Links (e.g., Google Drive, YouTube, etc.):', style: TextStyle(fontWeight: FontWeight.bold, fontSize: isMobile ? 13 : 15)),
-                    SizedBox(height: isMobile ? 4 : 6),
-                    TextField(
-                      controller: linksController,
-                      decoration: InputDecoration(
-                        labelText: 'Paste links here (separate by comma or newline)',
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                        prefixIcon: const Icon(Icons.link),
-                        filled: true,
-                        fillColor: Theme.of(context).colorScheme.secondary.withOpacity(0.07),
-                      ),
-                      minLines: 1,
-                      maxLines: 3,
-                    ),
-                  ],
-                ],
+                ),
               ),
             ),
           ),

@@ -3,6 +3,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class AdminAnnouncementsPage extends StatefulWidget {
   final VoidCallback? onToggleDarkMode;
@@ -94,12 +95,12 @@ class _AdminAnnouncementsPageState extends State<AdminAnnouncementsPage> {
   }
 
   Widget _buildAddForm(BuildContext context, bool isMobile, ColorScheme colorScheme) {
-    // Use a neutral color scheme: white background, light grey accents, black text
+    // Use only black, white, grey
     final Color borderColor = Colors.grey[300]!;
     final Color bgColor = Colors.white;
     final Color accent = Colors.grey[100]!;
     final Color iconColor = Colors.grey[800]!;
-    final Color buttonColor = Colors.grey[900]!;
+    final Color buttonColor = Colors.black;
     final Color buttonText = Colors.white;
     return Center(
       child: ConstrainedBox(
@@ -278,7 +279,7 @@ class _AdminAnnouncementsPageState extends State<AdminAnnouncementsPage> {
   }
 
   Widget _buildAnnouncementCard(Map<String, dynamic> data, ColorScheme colorScheme, bool isMobile) {
-    // Use neutral colors: white, grey, black
+    // Use only black, white, grey
     final Color borderColor = Colors.grey[300]!;
     final Color bgColor = Colors.white;
     final Color iconColor = Colors.grey[800]!;
@@ -312,9 +313,9 @@ class _AdminAnnouncementsPageState extends State<AdminAnnouncementsPage> {
       chips.add(
         Chip(
           label: const Text('Important', style: TextStyle(fontWeight: FontWeight.w500, fontSize: 12)),
-          backgroundColor: Colors.red[100],
-          labelStyle: const TextStyle(color: Colors.red),
-          avatar: Icon(Icons.priority_high, color: Colors.red, size: 16),
+          backgroundColor: Colors.grey[300],
+          labelStyle: const TextStyle(color: Colors.black),
+          avatar: Icon(Icons.priority_high, color: Colors.black, size: 16),
           padding: const EdgeInsets.symmetric(horizontal: 8),
         ),
       );
@@ -393,8 +394,13 @@ class _AdminAnnouncementsPageState extends State<AdminAnnouncementsPage> {
                           ? attachmentNames[i]
                           : 'Attachment';
                       return InkWell(
-                        onTap: () {
-                          // Open the attachment URL (use url_launcher in production)
+                        onTap: () async {
+                          if (url != null && url.toString().isNotEmpty) {
+                            final uri = Uri.parse(url.toString());
+                            if (await canLaunchUrl(uri)) {
+                              await launchUrl(uri, mode: LaunchMode.externalApplication);
+                            }
+                          }
                         },
                         child: Row(
                           children: [
@@ -425,7 +431,18 @@ class _AdminAnnouncementsPageState extends State<AdminAnnouncementsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    // Use only black, white, grey
+    final colorScheme = ColorScheme.light(
+      primary: Colors.black,
+      secondary: Colors.grey[700]!,
+      background: Colors.white,
+      surface: Colors.white,
+      onPrimary: Colors.white,
+      onSecondary: Colors.black,
+      onBackground: Colors.black,
+      onSurface: Colors.black,
+      brightness: Brightness.light,
+    );
     final isMobile = MediaQuery.of(context).size.width < 700;
     return SingleChildScrollView(
       child: Column(

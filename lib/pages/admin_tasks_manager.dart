@@ -310,13 +310,23 @@ Google Drive Link"
 
   @override
   Widget build(BuildContext context) {
-    // Modern color scheme
-    final Color orange = const Color(0xFFFF9800);
-    final Color yellow = const Color(0xFFFFEB3B);
-    final Color red = const Color(0xFFF44336);
-    final Color accent = const Color(0xFFFEF3E2);
+    // Use only black, white, grey for color scheme
+    final Color black = Colors.black;
+    final Color white = Colors.white;
+    final Color grey = Colors.grey[700]!;
+    final Color accent = Colors.grey[100]!;
 
-    final colorScheme = Theme.of(context).colorScheme;
+    final colorScheme = ColorScheme.light(
+      primary: black,
+      secondary: grey,
+      background: white,
+      surface: white,
+      onPrimary: white,
+      onSecondary: black,
+      onBackground: black,
+      onSurface: black,
+      brightness: Brightness.light,
+    );
     return LayoutBuilder(
       builder: (context, constraints) {
         final isMobile = constraints.maxWidth < 700;
@@ -324,11 +334,11 @@ Google Drive Link"
           width: double.infinity,
           margin: EdgeInsets.zero,
           padding: EdgeInsets.zero,
-          color: Colors.white, // Content background is white
+          color: white, // Content background is white
           child: Card(
             elevation: 2,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(0)),
-            color: Colors.white, // Card background is white
+            color: white, // Card background is white
             margin: EdgeInsets.zero,
             child: Padding(
               padding: EdgeInsets.zero,
@@ -343,7 +353,7 @@ Google Drive Link"
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: isMobile ? 22 : 28,
-                          color: const Color(0xFFFF9800),
+                          color: black,
                           letterSpacing: 1.1,
                         ),
                       ),
@@ -353,8 +363,8 @@ Google Drive Link"
                         icon: Icon(_showAddMenu ? Icons.close : Icons.add_circle),
                         label: Text(_showAddMenu ? 'Hide Add Task' : 'Add Task'),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Theme.of(context).colorScheme.primary,
-                          foregroundColor: Colors.white,
+                          backgroundColor: black,
+                          foregroundColor: white,
                           shape: StadiumBorder(),
                           elevation: 0,
                           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
@@ -367,95 +377,154 @@ Google Drive Link"
                   if (_showAddMenu)
                     Padding(
                       padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
-                      child: Flex(
-                        direction: isMobile ? Axis.vertical : Axis.horizontal,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            flex: 3,
-                            child: Padding(
-                              padding: EdgeInsets.only(bottom: isMobile ? 10 : 0, right: isMobile ? 0 : 12),
-                              child: TextField(
-                                controller: _drillTypeController,
-                                decoration: InputDecoration(
-                                  hintText: 'Drill Type (e.g. Earthquake)',
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(18)),
-                                  contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 18),
-                                  filled: true,
-                                  fillColor: Colors.white,
-                                ),
-                              ),
-                            ),
-                          ),
-                          SizedBox(width: isMobile ? 0 : 12, height: isMobile ? 10 : 0),
-                          Padding(
-                            padding: EdgeInsets.only(bottom: isMobile ? 10 : 0),
-                            child: Wrap(
-                              spacing: 8,
-                              children: [
-                                for (final freq in [
-                                  '1st Quarter',
-                                  '2nd Quarter',
-                                  '3rd Quarter',
-                                  '4th Quarter',
-                                  'Monthly Unannounced'
-                                ])
-                                  ChoiceChip(
-                                    label: Text(freq, style: TextStyle(fontSize: isMobile ? 12 : 14)),
-                                    selected: _selectedFrequency == freq,
-                                    onSelected: (selected) {
-                                      setState(() {
-                                        _selectedFrequency = selected ? freq : null;
-                                      });
-                                    },
-                                    selectedColor: Theme.of(context).colorScheme.primary.withOpacity(0.18),
-                                    backgroundColor: Colors.white,
-                                    labelStyle: TextStyle(
-                                      color: _selectedFrequency == freq
-                                          ? Theme.of(context).colorScheme.primary
-                                          : Colors.black87,
-                                      fontWeight: _selectedFrequency == freq ? FontWeight.bold : FontWeight.normal,
+                      child: Card(
+                        color: accent,
+                        elevation: 1,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        child: Padding(
+                          padding: const EdgeInsets.all(20.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Icon(Icons.add_circle_outline, color: black, size: 28),
+                                  SizedBox(width: 8),
+                                  Text(
+                                    'Add New Task',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 18,
+                                      color: black,
                                     ),
                                   ),
-                              ],
-                            ),
+                                ],
+                              ),
+                              const SizedBox(height: 18),
+                              Row(
+                                children: [
+                                  // Drill Type
+                                  Expanded(
+                                    flex: 3,
+                                    child: TextField(
+                                      controller: _drillTypeController,
+                                      decoration: InputDecoration(
+                                        prefixIcon: Icon(Icons.assignment, color: black),
+                                        hintText: 'Drill Type (e.g. Earthquake)',
+                                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(18)),
+                                        contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 18),
+                                        filled: true,
+                                        fillColor: white,
+                                      ),
+                                    ),
+                                  ),
+                                  SizedBox(width: 16),
+                                  // Frequency
+                                  Expanded(
+                                    flex: 4,
+                                    child: InputDecorator(
+                                      decoration: InputDecoration(
+                                        prefixIcon: Icon(Icons.repeat, color: black),
+                                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(18)),
+                                        contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 12),
+                                        filled: true,
+                                        fillColor: white,
+                                      ),
+                                      child: DropdownButtonHideUnderline(
+                                        child: DropdownButton<String>(
+                                          value: _selectedFrequency,
+                                          hint: Text('Frequency'),
+                                          items: [
+                                            '1st Quarter',
+                                            '2nd Quarter',
+                                            '3rd Quarter',
+                                            '4th Quarter',
+                                            'Monthly Unannounced'
+                                          ].map((e) => DropdownMenuItem(
+                                            value: e,
+                                            child: Text(e),
+                                          )).toList(),
+                                          onChanged: (selected) {
+                                            setState(() {
+                                              _selectedFrequency = selected;
+                                            });
+                                          },
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 16),
+                              Row(
+                                children: [
+                                  // Deadline
+                                  Expanded(
+                                    child: OutlinedButton.icon(
+                                      icon: Icon(Icons.event, color: black),
+                                      label: Text(
+                                        _deadline == null
+                                            ? 'Pick Deadline'
+                                            : 'Deadline: ${_deadline!.year}-${_deadline!.month.toString().padLeft(2, '0')}-${_deadline!.day.toString().padLeft(2, '0')}',
+                                        style: TextStyle(
+                                          color: _deadline == null ? Colors.black54 : Colors.black87,
+                                        ),
+                                      ),
+                                      style: OutlinedButton.styleFrom(
+                                        side: BorderSide(color: black),
+                                        shape: StadiumBorder(),
+                                        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+                                        backgroundColor: white,
+                                      ),
+                                      onPressed: _pickDeadline,
+                                    ),
+                                  ),
+                                  SizedBox(width: 16),
+                                  // Drill Date
+                                  Expanded(
+                                    child: OutlinedButton.icon(
+                                      icon: Icon(Icons.event_available, color: black),
+                                      label: Text(
+                                        _drillDate == null
+                                            ? 'Pick Drill Date'
+                                            : 'Drill Date: ${_drillDate!.year}-${_drillDate!.month.toString().padLeft(2, '0')}-${_drillDate!.day.toString().padLeft(2, '0')}',
+                                        style: TextStyle(
+                                          color: _drillDate == null ? Colors.black54 : Colors.black87,
+                                        ),
+                                      ),
+                                      style: OutlinedButton.styleFrom(
+                                        side: BorderSide(color: black),
+                                        shape: StadiumBorder(),
+                                        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+                                        backgroundColor: white,
+                                      ),
+                                      onPressed: _pickDrillDate,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 22),
+                              Align(
+                                alignment: Alignment.centerRight,
+                                child: ElevatedButton.icon(
+                                  icon: Icon(Icons.check_circle, color: white),
+                                  label: Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                                    child: Text('Add Task', style: TextStyle(fontWeight: FontWeight.bold)),
+                                  ),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: black,
+                                    foregroundColor: white,
+                                    shape: StadiumBorder(),
+                                    padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
+                                    elevation: 2,
+                                  ),
+                                  onPressed: _addTask,
+                                ),
+                              ),
+                            ],
                           ),
-                          SizedBox(width: isMobile ? 0 : 12, height: isMobile ? 10 : 0),
-                          TextButton(
-                            onPressed: _pickDeadline,
-                            style: TextButton.styleFrom(
-                              backgroundColor: Color(0xFFE7E1F3),
-                              foregroundColor: Color(0xFF7C6CB2),
-                              shape: StadiumBorder(),
-                              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-                            ),
-                            child: Text(_deadline == null ? 'Pick Deadline' : 'Deadline: ${_deadline!.year}-${_deadline!.month.toString().padLeft(2, '0')}-${_deadline!.day.toString().padLeft(2, '0')}'),
-                          ),
-                          SizedBox(width: isMobile ? 0 : 12, height: isMobile ? 10 : 0),
-                          TextButton(
-                            onPressed: _pickDrillDate,
-                            style: TextButton.styleFrom(
-                              backgroundColor: Color(0xFFE7E1F3),
-                              foregroundColor: Color(0xFF7C6CB2),
-                              shape: StadiumBorder(),
-                              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-                            ),
-                            child: Text(_drillDate == null
-                                ? 'Pick Drill Date'
-                                : 'Drill Date: ${_drillDate!.year}-${_drillDate!.month.toString().padLeft(2, '0')}-${_drillDate!.day.toString().padLeft(2, '0')}'),
-                          ),
-                          SizedBox(width: isMobile ? 0 : 12, height: isMobile ? 10 : 0),
-                          TextButton(
-                            onPressed: _addTask,
-                            style: TextButton.styleFrom(
-                              backgroundColor: Color(0xFFF3EFFF),
-                              foregroundColor: Color(0xFF7C6CB2),
-                              shape: StadiumBorder(),
-                              padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
-                            ),
-                            child: const Text('Add'),
-                          ),
-                        ],
+                        ),
                       ),
                     ),
                   // --- Filter, Sort, Search Row ---
@@ -536,13 +605,13 @@ Google Drive Link"
                         // Sort order toggle button with dynamic icon
                         Container(
                           decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.primary.withOpacity(0.12),
+                            color: grey.withOpacity(0.12),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: IconButton(
                             icon: Icon(
-                              _sortAsc ? Icons.arrow_upward : Icons.arrow_downward, // <-- changes icon based on _sortAsc
-                              color: Theme.of(context).colorScheme.primary,
+                              _sortAsc ? Icons.arrow_upward : Icons.arrow_downward,
+                              color: black,
                             ),
                             tooltip: 'Toggle sort order',
                             onPressed: () => setState(() => _sortAsc = !_sortAsc),
@@ -655,17 +724,19 @@ Google Drive Link"
                             final drillDate = (task['drillDate'] as Timestamp?)?.toDate();
                             return DataRow(
                               cells: [
-                                DataCell(Text(task['type'] ?? '')),
-                                DataCell(Text(task['frequency'] ?? '')),
+                                DataCell(Text(task['type'] ?? '', style: TextStyle(color: black))),
+                                DataCell(Text(task['frequency'] ?? '', style: TextStyle(color: black))),
                                 DataCell(Text(
                                   deadline != null
                                       ? _formatDate(deadline)
                                       : "N/A",
+                                  style: TextStyle(color: black),
                                 )),
                                 DataCell(Text(
                                   drillDate != null
                                       ? _formatDate(drillDate)
                                       : "N/A",
+                                  style: TextStyle(color: black),
                                 )),
                                 DataCell(
                                   Switch(
@@ -673,7 +744,7 @@ Google Drive Link"
                                     onChanged: (task['archived'] ?? false)
                                         ? null // Disable switch if archived
                                         : (val) => _toggleActive(doc.id, val),
-                                    activeColor: Color(0xFF7C6CB2),
+                                    activeColor: black,
                                   ),
                                 ),
                                 DataCell(
@@ -681,7 +752,7 @@ Google Drive Link"
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
                                       IconButton(
-                                        icon: Icon(Icons.edit, color: Colors.blue),
+                                        icon: Icon(Icons.edit, color: grey),
                                         tooltip: 'Edit Task',
                                         onPressed: () async {
                                           final task = doc.data() as Map<String, dynamic>;
@@ -813,7 +884,7 @@ Google Drive Link"
                                         },
                                       ),
                                       IconButton(
-                                        icon: Icon(Icons.delete, color: Colors.black54),
+                                        icon: Icon(Icons.delete, color: Colors.grey[600]),
                                         onPressed: () async {
                                           final confirm = await showDialog<bool>(
                                             context: context,
@@ -838,22 +909,22 @@ Google Drive Link"
                                         },
                                       ),
                                       IconButton(
-                                        icon: Icon(Icons.visibility, color: Colors.blue),
+                                        icon: Icon(Icons.visibility, color: grey),
                                         tooltip: 'View Submissions',
                                         onPressed: () => _viewSubmissions(doc.id, '${task['type']} (${task['frequency']})'),
                                       ),
                                       // --- Export Button with export logic ---
                                       TextButton(
-                                        child: const Text('Export'),
+                                        child: const Text('Export', style: TextStyle(color: Colors.black)),
                                         onPressed: () => _exportSubmissions(doc.id, '${task['type']} (${task['frequency']})'),
                                       ),
                                       // --- Archive Button ---
                                       if (!(task['archived'] ?? false))
                                         TextButton.icon(
-                                          icon: Icon(Icons.archive, color: Colors.orange),
-                                          label: const Text('Archive', style: TextStyle(color: Colors.orange)),
+                                          icon: Icon(Icons.archive, color: grey),
+                                          label: const Text('Archive', style: TextStyle(color: Colors.black)),
                                           style: TextButton.styleFrom(
-                                            foregroundColor: Colors.orange,
+                                            foregroundColor: Colors.black,
                                           ),
                                           onPressed: () async {
                                             final confirm = await showDialog<bool>(
@@ -885,10 +956,10 @@ Google Drive Link"
                                       // --- Unarchive Button ---
                                       if ((task['archived'] ?? false))
                                         TextButton.icon(
-                                          icon: Icon(Icons.unarchive, color: Colors.green),
-                                          label: const Text('Unarchive', style: TextStyle(color: Colors.green)),
+                                          icon: Icon(Icons.unarchive, color: grey),
+                                          label: const Text('Unarchive', style: TextStyle(color: Colors.black)),
                                           style: TextButton.styleFrom(
-                                            foregroundColor: Colors.green,
+                                            foregroundColor: Colors.black,
                                           ),
                                           onPressed: () async {
                                             final confirm = await showDialog<bool>(
