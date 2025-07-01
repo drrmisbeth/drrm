@@ -63,6 +63,29 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
       );
     } on FirebaseAuthException catch (e) {
+      // Show dialog for wrong password/email
+      if (e.code == 'user-not-found' || e.code == 'wrong-password') {
+        if (mounted) {
+          showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('Login Failed'),
+              content: const Text('Incorrect password/email'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('OK'),
+                ),
+              ],
+            ),
+          );
+        }
+        setState(() {
+          _error = null; // Do not show Firebase error in UI for these cases
+          _loading = false;
+        });
+        return;
+      }
       setState(() {
         _error = e.message ?? 'Login failed';
         _loading = false;

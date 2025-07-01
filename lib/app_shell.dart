@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'pages/school_home.dart';
 import 'pages/school_announcements.dart';
 import 'pages/school_tasks.dart' as tasks;
@@ -71,162 +72,278 @@ class _AppShellState extends State<AppShell> {
     }
   }
 
-  void _showProfileDialog(BuildContext context) {
-    final user = FirebaseAuth.instance.currentUser;
-    final emailController = TextEditingController(text: user?.email ?? '');
-    final passwordController = TextEditingController();
-    final confirmPasswordController = TextEditingController();
-    String? error;
-    bool loading = false;
-    bool emailVerified = user?.emailVerified ?? false;
-
-    Future<void> _sendVerificationEmail() async {
-      try {
-        await user?.sendEmailVerification();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Verification email sent. Please check your inbox.')),
-        );
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to send verification email.')),
-        );
+  void _showProfileDialog(BuildContext context) async {
+  final user = FirebaseAuth.instance.currentUser;
+  final emailController = TextEditingController(text: user?.email ?? '');
+  String? error;
+  bool loading = false;
+  // --- Fetch school name if user is school ---
+  String? schoolName;
+  if (widget.role == UserRole.school && user != null) {
+    try {
+      final doc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+      final data = doc.data();
+      if (data != null) {
+        schoolName = data['name'] ?? data['email'] ?? '';
       }
-    }
+    } catch (_) {}
+  }
 
-    showDialog(
-      context: context,
-      builder: (ctx) {
-        return StatefulBuilder(
-          builder: (ctx, setState) => AlertDialog(
-            title: const Text('Profile'),
-            content: SizedBox(
-              width: 340,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextField(
-                    controller: emailController,
-                    decoration: const InputDecoration(
-                      labelText: 'Email',
-                      prefixIcon: Icon(Icons.email),
-                    ),
-                  ),
-                  if (!emailVerified)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 8, bottom: 4),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.warning, color: Colors.orange, size: 18),
-                          const SizedBox(width: 6),
-                          const Expanded(
-                            child: Text(
-                              'Email not verified.',
-                              style: TextStyle(color: Colors.orange, fontSize: 13),
-                            ),
+  showDialog(
+    context: context,
+    builder: (ctx) {
+      return StatefulBuilder(
+        builder: (ctx, setState) => AlertDialog(
+          title: const Text('Profile'),
+          content: SizedBox(
+            width: 340,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // --- Show school name if available ---
+                if (schoolName != null && schoolName.isNotEmpty) ...[
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.school, color: Colors.blue, size: 20),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            schoolName,
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          TextButton(
-                            onPressed: loading ? null : () async {
-                              await _sendVerificationEmail();
-                            },
-                            child: const Text('Resend', style: TextStyle(fontSize: 13)),
-                          ),
-                        ],
-                      ),
-                    ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: passwordController,
-                    obscureText: true,
-                    decoration: const InputDecoration(
-                      labelText: 'New Password',
-                      prefixIcon: Icon(Icons.lock),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: confirmPasswordController,
-                    obscureText: true,
-                    decoration: const InputDecoration(
-                      labelText: 'Confirm Password',
-                      prefixIcon: Icon(Icons.lock_outline),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Row(
-                    children: const [
-                      Icon(Icons.info_outline, color: Colors.blue, size: 18),
-                      SizedBox(width: 6),
-                      Expanded(
-                        child: Text(
-                          'Note: verify email first before changing email or password.',
-                          style: TextStyle(color: Colors.blue, fontSize: 13),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                  if (error != null) ...[
-                    const SizedBox(height: 10),
-                    Text(error!, style: const TextStyle(color: Colors.red)),
-                  ],
                 ],
-              ),
+                TextField(
+                  controller: emailController,
+                  decoration: const InputDecoration(
+                    labelText: 'Email',
+                    prefixIcon: Icon(Icons.email),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  children: const [
+                    Icon(Icons.info_outline, color: Colors.blue, size: 18),
+                    SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        'Enter a new email and press Save. A verification link will be sent.',
+                        style: TextStyle(color: Colors.blue, fontSize: 13),
+                      ),
+                    ),
+                  ],
+                ),
+                if (error != null) ...[
+                  const SizedBox(height: 10),
+                  Text(error!, style: const TextStyle(color: Colors.red)),
+                ],
+              ],
             ),
-            actions: [
-              TextButton(
-                onPressed: loading ? null : () => Navigator.of(ctx).pop(),
-                child: const Text('Close'),
-              ),
-              ElevatedButton(
-                onPressed: loading || !emailVerified
-                    ? null
-                    : () async {
-                        setState(() => loading = true);
-                        try {
-                          // Update email if changed
-                          if (emailController.text.trim() != (user?.email ?? '')) {
-                            await user?.updateEmail(emailController.text.trim());
+          ),
+          actions: [
+            TextButton(
+              onPressed: loading ? null : () => Navigator.of(ctx).pop(),
+              child: const Text('Close'),
+            ),
+            // --- Change Password Button ---
+            TextButton(
+              onPressed: loading
+                  ? null
+                  : () async {
+                      final passwordController = TextEditingController();
+                      final confirmPasswordController = TextEditingController();
+                      String? passwordError;
+                      bool passwordLoading = false;
+                      bool showPassword = false;
+                      bool showConfirmPassword = false;
+                      await showDialog(
+                        context: ctx,
+                        builder: (pwCtx) {
+                          return StatefulBuilder(
+                            builder: (pwCtx, pwSetState) => AlertDialog(
+                              title: const Text('Change Password'),
+                              content: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  TextField(
+                                    controller: passwordController,
+                                    obscureText: !showPassword,
+                                    decoration: InputDecoration(
+                                      labelText: 'New Password',
+                                      prefixIcon: const Icon(Icons.lock),
+                                      errorText: passwordError,
+                                      suffixIcon: IconButton(
+                                        icon: Icon(
+                                          showPassword ? Icons.visibility : Icons.visibility_off,
+                                        ),
+                                        onPressed: () {
+                                          pwSetState(() {
+                                            showPassword = !showPassword;
+                                          });
+                                        },
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 10),
+                                  TextField(
+                                    controller: confirmPasswordController,
+                                    obscureText: !showConfirmPassword,
+                                    decoration: InputDecoration(
+                                      labelText: 'Confirm New Password',
+                                      prefixIcon: const Icon(Icons.lock_outline),
+                                      suffixIcon: IconButton(
+                                        icon: Icon(
+                                          showConfirmPassword ? Icons.visibility : Icons.visibility_off,
+                                        ),
+                                        onPressed: () {
+                                          pwSetState(() {
+                                            showConfirmPassword = !showConfirmPassword;
+                                          });
+                                        },
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: passwordLoading ? null : () => Navigator.of(pwCtx).pop(),
+                                  child: const Text('Cancel'),
+                                ),
+                                ElevatedButton(
+                                  onPressed: passwordLoading
+                                      ? null
+                                      : () async {
+                                          final newPassword = passwordController.text.trim();
+                                          final confirmPassword = confirmPasswordController.text.trim();
+                                          if (newPassword.length < 6) {
+                                            pwSetState(() {
+                                              passwordError = 'Password must be at least 6 characters.';
+                                            });
+                                            return;
+                                          }
+                                          if (newPassword != confirmPassword) {
+                                            pwSetState(() {
+                                              passwordError = 'Passwords do not match.';
+                                            });
+                                            return;
+                                          }
+                                          pwSetState(() => passwordLoading = true);
+                                          try {
+                                            await user?.updatePassword(newPassword);
+                                            if (pwCtx.mounted) Navigator.of(pwCtx).pop();
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              const SnackBar(content: Text('Password updated successfully.')),
+                                            );
+                                          } on FirebaseAuthException catch (e) {
+                                            pwSetState(() {
+                                              passwordError = e.message ?? 'Failed to update password';
+                                              passwordLoading = false;
+                                            });
+                                          } catch (_) {
+                                            pwSetState(() {
+                                              passwordError = 'Failed to update password';
+                                              passwordLoading = false;
+                                            });
+                                          }
+                                        },
+                                  child: passwordLoading
+                                      ? const SizedBox(
+                                          width: 18,
+                                          height: 18,
+                                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                        )
+                                      : const Text('Save'),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      );
+                    },
+              child: const Text('Change Password'),
+            ),
+            ElevatedButton(
+              onPressed: loading
+                  ? null
+                  : () async {
+                      setState(() => loading = true);
+                      try {
+                        final newEmail = emailController.text.trim();
+
+                        if (newEmail.isEmpty) {
+                          setState(() {
+                            error = 'Email cannot be empty.';
+                            loading = false;
+                          });
+                          return;
+                        }
+
+                        // If email is different, send verification link to new email
+                        if (newEmail != (user?.email ?? '')) {
+                          await user?.verifyBeforeUpdateEmail(newEmail);
+
+                          // --- Update email in Firestore users collection ---
+                          if (user != null) {
+                            await FirebaseFirestore.instance
+                                .collection('users')
+                                .doc(user.uid)
+                                .update({'email': newEmail});
                           }
-                          // Update password if provided and matches
-                          if (passwordController.text.isNotEmpty) {
-                            if (passwordController.text != confirmPasswordController.text) {
-                              setState(() {
-                                error = 'Passwords do not match.';
-                                loading = false;
-                              });
-                              return;
-                            }
-                            await user?.updatePassword(passwordController.text);
-                          }
+
                           setState(() {
                             error = null;
                             loading = false;
                           });
+
                           if (ctx.mounted) Navigator.of(ctx).pop();
+
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Profile updated.')),
+                            SnackBar(
+                              content: Text(
+                                'Verification link sent to $newEmail. Please verify it to complete the update.',
+                              ),
+                            ),
                           );
-                        } on FirebaseAuthException catch (e) {
+                        } else {
                           setState(() {
-                            error = e.message ?? 'Update failed';
-                            loading = false;
-                          });
-                        } catch (e) {
-                          setState(() {
-                            error = 'Update failed';
+                            error = 'Email is the same as before.';
                             loading = false;
                           });
                         }
-                      },
-                child: loading
-                    ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                    : const Text('Save'),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
+                      } on FirebaseAuthException catch (e) {
+                        setState(() {
+                          error = e.message ?? 'Update failed';
+                          loading = false;
+                        });
+                      } catch (e) {
+                        setState(() {
+                          error = 'Update failed';
+                          loading = false;
+                        });
+                      }
+                    },
+              child: loading
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    )
+                  : const Text('Save'),
+            ),
+          ],
+        ),
+      );
+    },
+  );
+}
+
 
   @override
   Widget build(BuildContext context) {
