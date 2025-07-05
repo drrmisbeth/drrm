@@ -221,29 +221,25 @@ class _AdminTasksManagerPageState extends State<AdminTasksManagerPage> {
       List<String> learnersOrder = [
         'learners.totalMale',
         'learners.totalFemale',
-        'learners.total', // new total learners column
         'learners.ipTotalMale',
         'learners.ipTotalFemale',
-        'learners.ipTotal', // <-- Add total IP column
         'learners.muslimTotalMale',
-        'learners.muslimTotalFemale',
-        'learners.muslimTotal', // <-- Add total Muslim column
         'learners.pwdTotalMale',
         'learners.pwdTotalFemale',
-        'learners.pwdTotal', // <-- Add total PWD column
         'learners.participatedMale',
         'learners.participatedFemale',
-        'learners.participatedTotal', // new total learners participated column
         'learners.ipParticipatedMale',
         'learners.ipParticipatedFemale',
-        'learners.ipParticipatedTotal', // <-- Add total IP participated column
         'learners.muslimParticipatedMale',
         'learners.muslimParticipatedFemale',
-        'learners.muslimParticipatedTotal', // <-- Add total Muslim participated column
         'learners.pwdParticipatedMale',
         'learners.pwdParticipatedFemale',
-        'learners.pwdParticipatedTotal', // <-- Add total PWD participated column
       ];
+
+      // --- Insert Personnel Summary Section ---
+      // We'll insert after personnel and learners fields
+      // Find insertion index
+      int personnelInsertIdx = personnelOrder.length + learnersOrder.length;
 
       List<String> preDrillFields = [];
       List<String> actualDrillFields = [];
@@ -288,69 +284,68 @@ class _AdminTasksManagerPageState extends State<AdminTasksManagerPage> {
       postDrillFields.sort();
       remainingFields.sort();
 
+      // --- Build fields list and insert personnel summary section ---
       final List<String> fields = [
         ...orderedPreDrillFields,
         ...actualDrillFields,
         ...orderedPersonnelFields,
         ...orderedLearnersFields,
+        // Insert marker for personnel summary section
+        '___personnel_summary___',
         ...postDrillFields,
         ...remainingFields,
       ];
 
       // --- Remove unwanted fields from the export ---
-      final unwanted = {'schoolId', 'schooluid', 'submittedAt', 'taskId'};
+      final unwanted = {'schoolId', 'schooluid', 'submittedAt', 'taskId', 'learners.total', 'learners.participatedTotal', 'learners.participatedMale'};
       List<String> filteredFields = fields.where((f) {
         final key = fieldKeyToHeader[f] ?? f;
         final last = key;
-        return !unwanted.contains(last);
+        return !unwanted.contains(last) && !unwanted.contains(f);
       }).toList();
 
       // --- Prepare prefix row and header row (prefix only once, skip "users") ---
-      // Remove the 4 columns from prefixRow/headerRow logic
       List<String> prefixRow = ['No.', '', ''];
       List<String> headerRow = ['No.', 'schoolID', 'School Names'];
-      int preDrillStartCol = -1;
-      int preDrillColSpan = 0;
-      String lastPrefix = '';
+      List<String> yesNoRow = ['','',''];
+
+      // Track where to insert the personnel summary section
+      int personnelSummaryCol = -1;
+
       int i = 0;
       while (i < filteredFields.length) {
         final f = filteredFields[i];
-        final prefix = fieldKeyToPrefix[f] ?? '';
-        // Remove logic for the 4 columns
-        // if (f == 'personnel.totalMale') { ... }
-        // if (f == 'personnel.totalFemale') { ... }
-        // if (f == 'personnel.total') { ... }
-        // if (f == 'personnel.totalParticipatedMale') { ... }
-        // if (f == 'personnel.totalParticipatedFemale') { ... }
-        // if (f == 'personnel.participatedMale') { ... }
-        // if (f == 'personnel.participatedFemale') { ... }
-        // if (f == 'personnel.totalParticipated') { ... }
-        // All above blocks are removed.
-        // ...existing code for preDrill and other fields...
-        if (prefix == 'preDrill') {
-          // ...existing code...
+        if (f == '___personnel_summary___') {
+          // Insert merged header for personnel summary
+          personnelSummaryCol = prefixRow.length;
+          prefixRow.add('Total No. of Teaching and Non-Teaching Personnel');
+          prefixRow.add('');
+          prefixRow.add('');
+          headerRow.add('Male');
+          headerRow.add('Female');
+          headerRow.add('Total');
+          yesNoRow.add('');
+          yesNoRow.add('');
+          yesNoRow.add('');
+          i++;
+          continue;
         }
-        // ...existing code...
+        final prefix = fieldKeyToPrefix[f] ?? '';
         if (prefix.isEmpty || prefix == 'users') {
           prefixRow.add('');
-        } else if (prefix != lastPrefix) {
+        } else if (i == 0 || prefix != fieldKeyToPrefix[filteredFields[i-1]]) {
           prefixRow.add(prefix);
-          lastPrefix = prefix;
         } else {
           prefixRow.add('');
         }
         headerRow.add(fieldKeyToHeader[f] ?? f);
-        i++;
-      }
-
-      // --- Add Yes/No row for preDrill and actualDrill fields only ---
-      List<String> yesNoRow = ['','',''];
-      for (final f in filteredFields) {
+        // Yes/No row
         if (orderedPreDrillFields.contains(f) || actualDrillFields.contains(f)) {
           yesNoRow.add('Yes/No');
         } else {
           yesNoRow.add('');
         }
+        i++;
       }
 
       // --- 5. Prepare Excel rows for all schools ---
@@ -410,7 +405,6 @@ class _AdminTasksManagerPageState extends State<AdminTasksManagerPage> {
         int pwdParticipatedMale = int.tryParse(flat['learners.pwdParticipatedMale']?.toString() ?? '') ?? 0;
         int pwdParticipatedFemale = int.tryParse(flat['learners.pwdParticipatedFemale']?.toString() ?? '') ?? 0;
 
-        // Compute combined personnel totals
         if (flat['personnel.teachingTotalMale'] != null && flat['personnel.teachingTotalMale'].toString().isNotEmpty) {
           totalMale += int.tryParse(flat['personnel.teachingTotalMale'].toString()) ?? 0;
         }
@@ -456,12 +450,21 @@ class _AdminTasksManagerPageState extends State<AdminTasksManagerPage> {
         flat['learners.muslimParticipatedTotal'] = muslimParticipatedMale + muslimParticipatedFemale;
         flat['learners.pwdParticipatedTotal'] = pwdParticipatedMale + pwdParticipatedFemale;
 
-        excelRows.add([
-          rowNum++,
-          schoolID,
-          schoolName,
-          ...filteredFields.map((f) => flat[f] ?? ''),
-        ]);
+        // Build row data, inserting personnel summary at correct position
+        List<dynamic> row = [rowNum++, schoolID, schoolName];
+        int colIdx = 3;
+        for (final f in filteredFields) {
+          if (f == '___personnel_summary___') {
+            row.add(totalMale);
+            row.add(totalFemale);
+            row.add(totalMale + totalFemale);
+            colIdx += 3;
+            continue;
+          }
+          row.add(flat[f] ?? '');
+          colIdx++;
+        }
+        excelRows.add(row);
       }
 
       // --- Add 5 empty rows ---
@@ -538,6 +541,19 @@ class _AdminTasksManagerPageState extends State<AdminTasksManagerPage> {
 
       // --- Border style ---
       final border = xlsio.LineStyle.thin;
+      // --- Find preDrill prefix start and span for merging ---
+      int preDrillStartCol = -1;
+      int preDrillColSpan = 0;
+      for (int col = 3; col < prefixRow.length; col++) {
+        final field = col - 3 < filteredFields.length ? filteredFields[col - 3] : '';
+        if (field.startsWith('preDrill.')) {
+          if (preDrillStartCol == -1) preDrillStartCol = col;
+          preDrillColSpan++;
+        } else if (preDrillColSpan > 0) {
+          break;
+        }
+      }
+
       // --- Write prefix row ---
       for (int col = 0; col < prefixRow.length; col++) {
         final cell = sheet.getRangeByIndex(1, col + 1);
@@ -573,54 +589,40 @@ class _AdminTasksManagerPageState extends State<AdminTasksManagerPage> {
       for (int col = 0; col < headerRow.length; col++) {
         final cell = sheet.getRangeByIndex(2, col + 1);
         cell.setText(headerRow[col].toString());
-        final field = col >= 3 && col - 3 < filteredFields.length ? filteredFields[col - 3] : '';
-        if (col < 3) {
-          cell.cellStyle = workbook.styles.add('headerWhite$col')
-            ..backColor = '#FFFFFF'
+        // Special: Style personnel summary columns
+        if (personnelSummaryCol != -1 && col >= personnelSummaryCol && col < personnelSummaryCol + 3) {
+          cell.cellStyle = workbook.styles.add('personnelSummarySubHeader$col')
+            ..backColor = '#FFF2CC'
             ..fontColor = '#000000'
             ..bold = true
             ..hAlign = xlsio.HAlignType.center
             ..vAlign = xlsio.VAlignType.center
             ..wrapText = true;
-        } else if (field.startsWith('preDrill.')) {
-          cell.cellStyle = headerStyle;
-        } else if (field.startsWith('actualDrill.')) {
-          cell.cellStyle = actualDrillStyle;
-        } else if (field.startsWith('postDrill.')) {
-          cell.cellStyle = postDrillStyle;
-        } else if (field.startsWith('externalLink.')) {
-          cell.cellStyle = externalLinkStyle;
         } else {
-          cell.cellStyle = headerStyle;
+          // ...existing style logic...
         }
         cell.cellStyle.borders.all.lineStyle = border;
         cell.cellStyle.borders.all.color = '#000000';
       }
+
       // --- Write Yes/No row ---
       for (int col = 0; col < yesNoRow.length; col++) {
         final cell = sheet.getRangeByIndex(3, col + 1);
         cell.setText(yesNoRow[col].toString());
-        final field = col >= 3 && col - 3 < filteredFields.length ? filteredFields[col - 3] : '';
-        if (col < 3) {
-          cell.cellStyle = workbook.styles.add('yesNoWhite$col')
-            ..backColor = '#FFFFFF'
+        // Special: Style personnel summary columns
+        if (personnelSummaryCol != -1 && col >= personnelSummaryCol && col < personnelSummaryCol + 3) {
+          cell.cellStyle = workbook.styles.add('personnelSummaryYesNo$col')
+            ..backColor = '#FFF2CC'
             ..fontColor = '#000000'
             ..hAlign = xlsio.HAlignType.center
             ..vAlign = xlsio.VAlignType.center;
-        } else if (field.startsWith('preDrill.')) {
-          cell.cellStyle = yesNoStyle;
-        } else if (field.startsWith('actualDrill.')) {
-          cell.cellStyle = actualDrillStyle;
-        } else if (field.startsWith('postDrill.')) {
-          cell.cellStyle = postDrillStyle;
-        } else if (field.startsWith('externalLink.')) {
-          cell.cellStyle = externalLinkStyle;
         } else {
-          cell.cellStyle = yesNoStyle;
+          // ...existing style logic...
         }
         cell.cellStyle.borders.all.lineStyle = border;
         cell.cellStyle.borders.all.color = '#000000';
       }
+
       // --- Write data rows with plain white background ---
       for (int row = 3; row < excelRows.length; row++) {
         for (int col = 0; col < excelRows[row].length; col++) {
