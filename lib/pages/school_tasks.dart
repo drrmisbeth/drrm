@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter/services.dart';
 
 class SchoolTasksPage extends StatelessWidget {
   final VoidCallback? onToggleDarkMode;
@@ -261,22 +262,35 @@ class _SchoolSubmitFormPageState extends State<SchoolSubmitFormPage> {
   final TextEditingController otherActivities = TextEditingController();
 
   // Personnel/Participants
-  final TextEditingController teachingPersonnelTotal = TextEditingController();
-  final TextEditingController nonTeachingPersonnelTotal = TextEditingController();
-  final TextEditingController teachingPersonnelParticipated = TextEditingController();
-  final TextEditingController nonTeachingPersonnelParticipated = TextEditingController();
+  // --- Total Population ---
+  final TextEditingController teachingPersonnelTotalMale = TextEditingController();
+  final TextEditingController teachingPersonnelTotalFemale = TextEditingController();
+  final TextEditingController nonTeachingPersonnelTotalMale = TextEditingController();
+  final TextEditingController nonTeachingPersonnelTotalFemale = TextEditingController();
 
-  final TextEditingController learnersMale = TextEditingController();
-  final TextEditingController learnersFemale = TextEditingController();
-  final TextEditingController learnersIP = TextEditingController();
-  final TextEditingController learnersMuslim = TextEditingController();
-  final TextEditingController learnersPWD = TextEditingController();
+  final TextEditingController learnersTotalMale = TextEditingController();
+  final TextEditingController learnersTotalFemale = TextEditingController();
+  final TextEditingController ipTotalMale = TextEditingController();
+  final TextEditingController ipTotalFemale = TextEditingController();
+  final TextEditingController muslimTotalMale = TextEditingController();
+  final TextEditingController muslimTotalFemale = TextEditingController();
+  final TextEditingController pwdTotalMale = TextEditingController();
+  final TextEditingController pwdTotalFemale = TextEditingController();
+
+  // --- Participated ---
+  final TextEditingController teachingPersonnelParticipatedMale = TextEditingController();
+  final TextEditingController teachingPersonnelParticipatedFemale = TextEditingController();
+  final TextEditingController nonTeachingPersonnelParticipatedMale = TextEditingController();
+  final TextEditingController nonTeachingPersonnelParticipatedFemale = TextEditingController();
 
   final TextEditingController learnersParticipatedMale = TextEditingController();
   final TextEditingController learnersParticipatedFemale = TextEditingController();
-  final TextEditingController learnersParticipatedIP = TextEditingController();
-  final TextEditingController learnersParticipatedMuslim = TextEditingController();
-  final TextEditingController learnersParticipatedPWD = TextEditingController();
+  final TextEditingController ipParticipatedMale = TextEditingController();
+  final TextEditingController ipParticipatedFemale = TextEditingController();
+  final TextEditingController muslimParticipatedMale = TextEditingController();
+  final TextEditingController muslimParticipatedFemale = TextEditingController();
+  final TextEditingController pwdParticipatedMale = TextEditingController();
+  final TextEditingController pwdParticipatedFemale = TextEditingController();
 
   // Post-Drill
   bool? reviewedContingencyPlan;
@@ -288,9 +302,6 @@ class _SchoolSubmitFormPageState extends State<SchoolSubmitFormPage> {
   // --- NEW: For edit mode ---
   bool _loadingSubmission = true;
   String? _submissionId; // For updating existing submission
-
-  // Add this flag
-  bool _alreadySubmitted = false;
 
   @override
   void initState() {
@@ -312,7 +323,7 @@ class _SchoolSubmitFormPageState extends State<SchoolSubmitFormPage> {
       final doc = snap.docs.first;
       final data = doc.data();
       _submissionId = doc.id;
-      _alreadySubmitted = true;
+      // Remove: _alreadySubmitted = true;
       // Pre-Drill
       final Map<String, dynamic> pd = Map<String, dynamic>.from(data['preDrill'] ?? {});
       for (final k in preDrill.keys) {
@@ -326,22 +337,32 @@ class _SchoolSubmitFormPageState extends State<SchoolSubmitFormPage> {
       otherActivities.text = actual['otherActivities'] ?? '';
       // Personnel
       final personnel = data['personnel'] ?? {};
-      teachingPersonnelTotal.text = personnel['teachingTotal'] ?? '';
-      nonTeachingPersonnelTotal.text = personnel['nonTeachingTotal'] ?? '';
-      teachingPersonnelParticipated.text = personnel['teachingParticipated'] ?? '';
-      nonTeachingPersonnelParticipated.text = personnel['nonTeachingParticipated'] ?? '';
+      teachingPersonnelTotalMale.text = personnel['teachingTotalMale'] ?? '';
+      teachingPersonnelTotalFemale.text = personnel['teachingTotalFemale'] ?? '';
+      nonTeachingPersonnelTotalMale.text = personnel['nonTeachingTotalMale'] ?? '';
+      nonTeachingPersonnelTotalFemale.text = personnel['nonTeachingTotalFemale'] ?? '';
+      teachingPersonnelParticipatedMale.text = personnel['teachingParticipatedMale'] ?? '';
+      teachingPersonnelParticipatedFemale.text = personnel['teachingParticipatedFemale'] ?? '';
+      nonTeachingPersonnelParticipatedMale.text = personnel['nonTeachingParticipatedMale'] ?? '';
+      nonTeachingPersonnelParticipatedFemale.text = personnel['nonTeachingParticipatedFemale'] ?? '';
       // Learners
       final learners = data['learners'] ?? {};
-      learnersMale.text = learners['male'] ?? '';
-      learnersFemale.text = learners['female'] ?? '';
-      learnersIP.text = learners['ip'] ?? '';
-      learnersMuslim.text = learners['muslim'] ?? '';
-      learnersPWD.text = learners['pwd'] ?? '';
+      learnersTotalMale.text = learners['totalMale'] ?? '';
+      learnersTotalFemale.text = learners['totalFemale'] ?? '';
+      ipTotalMale.text = learners['ipTotalMale'] ?? '';
+      ipTotalFemale.text = learners['ipTotalFemale'] ?? '';
+      muslimTotalMale.text = learners['muslimTotalMale'] ?? '';
+      muslimTotalFemale.text = learners['muslimTotalFemale'] ?? '';
+      pwdTotalMale.text = learners['pwdTotalMale'] ?? '';
+      pwdTotalFemale.text = learners['pwdTotalFemale'] ?? '';
       learnersParticipatedMale.text = learners['participatedMale'] ?? '';
       learnersParticipatedFemale.text = learners['participatedFemale'] ?? '';
-      learnersParticipatedIP.text = learners['participatedIP'] ?? '';
-      learnersParticipatedMuslim.text = learners['participatedMuslim'] ?? '';
-      learnersParticipatedPWD.text = learners['participatedPWD'] ?? '';
+      ipParticipatedMale.text = learners['ipParticipatedMale'] ?? '';
+      ipParticipatedFemale.text = learners['ipParticipatedFemale'] ?? '';
+      muslimParticipatedMale.text = learners['muslimParticipatedMale'] ?? '';
+      muslimParticipatedFemale.text = learners['muslimParticipatedFemale'] ?? '';
+      pwdParticipatedMale.text = learners['pwdParticipatedMale'] ?? '';
+      pwdParticipatedFemale.text = learners['pwdParticipatedFemale'] ?? '';
       // Post-Drill
       final post = data['postDrill'] ?? {};
       reviewedContingencyPlan = post['reviewedContingencyPlan'];
@@ -535,10 +556,11 @@ class _SchoolSubmitFormPageState extends State<SchoolSubmitFormPage> {
             children: [
               Expanded(
                 child: TextField(
-                  controller: teachingPersonnelTotal,
+                  controller: teachingPersonnelTotalMale,
                   keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                   decoration: InputDecoration(
-                    labelText: 'Teaching Personnel',
+                    labelText: 'Teaching Personnel (Male)',
                     filled: true,
                     fillColor: Colors.grey[100],
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
@@ -548,10 +570,11 @@ class _SchoolSubmitFormPageState extends State<SchoolSubmitFormPage> {
               const SizedBox(width: 8),
               Expanded(
                 child: TextField(
-                  controller: nonTeachingPersonnelTotal,
+                  controller: teachingPersonnelTotalFemale,
                   keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                   decoration: InputDecoration(
-                    labelText: 'Non-Teaching Personnel',
+                    labelText: 'Teaching Personnel (Female)',
                     filled: true,
                     fillColor: Colors.grey[100],
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
@@ -560,17 +583,16 @@ class _SchoolSubmitFormPageState extends State<SchoolSubmitFormPage> {
               ),
             ],
           ),
-          const SizedBox(height: 10),
-          Text('No. of Personnel Participated', style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: 4),
+          const SizedBox(height: 6),
           Row(
             children: [
               Expanded(
                 child: TextField(
-                  controller: teachingPersonnelParticipated,
+                  controller: nonTeachingPersonnelTotalMale,
                   keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                   decoration: InputDecoration(
-                    labelText: 'Teaching Personnel',
+                    labelText: 'Non-Teaching Personnel (Male)',
                     filled: true,
                     fillColor: Colors.grey[100],
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
@@ -580,10 +602,11 @@ class _SchoolSubmitFormPageState extends State<SchoolSubmitFormPage> {
               const SizedBox(width: 8),
               Expanded(
                 child: TextField(
-                  controller: nonTeachingPersonnelParticipated,
+                  controller: nonTeachingPersonnelTotalFemale,
                   keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                   decoration: InputDecoration(
-                    labelText: 'Non-Teaching Personnel',
+                    labelText: 'Non-Teaching Personnel (Female)',
                     filled: true,
                     fillColor: Colors.grey[100],
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
@@ -599,10 +622,11 @@ class _SchoolSubmitFormPageState extends State<SchoolSubmitFormPage> {
             children: [
               Expanded(
                 child: TextField(
-                  controller: learnersMale,
+                  controller: learnersTotalMale,
                   keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                   decoration: InputDecoration(
-                    labelText: 'Male',
+                    labelText: 'Learners (Male)',
                     filled: true,
                     fillColor: Colors.grey[100],
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
@@ -612,10 +636,11 @@ class _SchoolSubmitFormPageState extends State<SchoolSubmitFormPage> {
               const SizedBox(width: 8),
               Expanded(
                 child: TextField(
-                  controller: learnersFemale,
+                  controller: learnersTotalFemale,
                   keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                   decoration: InputDecoration(
-                    labelText: 'Female',
+                    labelText: 'Learners (Female)',
                     filled: true,
                     fillColor: Colors.grey[100],
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
@@ -629,10 +654,11 @@ class _SchoolSubmitFormPageState extends State<SchoolSubmitFormPage> {
             children: [
               Expanded(
                 child: TextField(
-                  controller: learnersIP,
+                  controller: ipTotalMale,
                   keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                   decoration: InputDecoration(
-                    labelText: 'IP',
+                    labelText: 'IP (Male)',
                     filled: true,
                     fillColor: Colors.grey[100],
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
@@ -642,10 +668,29 @@ class _SchoolSubmitFormPageState extends State<SchoolSubmitFormPage> {
               const SizedBox(width: 8),
               Expanded(
                 child: TextField(
-                  controller: learnersMuslim,
+                  controller: ipTotalFemale,
                   keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                   decoration: InputDecoration(
-                    labelText: 'Muslim',
+                    labelText: 'IP (Female)',
+                    filled: true,
+                    fillColor: Colors.grey[100],
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: muslimTotalMale,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  decoration: InputDecoration(
+                    labelText: 'Muslim (Male)',
                     filled: true,
                     fillColor: Colors.grey[100],
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
@@ -655,10 +700,109 @@ class _SchoolSubmitFormPageState extends State<SchoolSubmitFormPage> {
               const SizedBox(width: 8),
               Expanded(
                 child: TextField(
-                  controller: learnersPWD,
+                  controller: muslimTotalFemale,
                   keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                   decoration: InputDecoration(
-                    labelText: 'With Disability',
+                    labelText: 'Muslim (Female)',
+                    filled: true,
+                    fillColor: Colors.grey[100],
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: pwdTotalMale,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  decoration: InputDecoration(
+                    labelText: 'With Disability (Male)',
+                    filled: true,
+                    fillColor: Colors.grey[100],
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: TextField(
+                  controller: pwdTotalFemale,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  decoration: InputDecoration(
+                    labelText: 'With Disability (Female)',
+                    filled: true,
+                    fillColor: Colors.grey[100],
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text('No. of Personnel Participated', style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 4),
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: teachingPersonnelParticipatedMale,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  decoration: InputDecoration(
+                    labelText: 'Teaching Personnel (Male)',
+                    filled: true,
+                    fillColor: Colors.grey[100],
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: TextField(
+                  controller: teachingPersonnelParticipatedFemale,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  decoration: InputDecoration(
+                    labelText: 'Teaching Personnel (Female)',
+                    filled: true,
+                    fillColor: Colors.grey[100],
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: nonTeachingPersonnelParticipatedMale,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  decoration: InputDecoration(
+                    labelText: 'Non-Teaching Personnel (Male)',
+                    filled: true,
+                    fillColor: Colors.grey[100],
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: TextField(
+                  controller: nonTeachingPersonnelParticipatedFemale,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  decoration: InputDecoration(
+                    labelText: 'Non-Teaching Personnel (Female)',
                     filled: true,
                     fillColor: Colors.grey[100],
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
@@ -676,8 +820,9 @@ class _SchoolSubmitFormPageState extends State<SchoolSubmitFormPage> {
                 child: TextField(
                   controller: learnersParticipatedMale,
                   keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                   decoration: InputDecoration(
-                    labelText: 'Male',
+                    labelText: 'Learners (Male)',
                     filled: true,
                     fillColor: Colors.grey[100],
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
@@ -689,8 +834,9 @@ class _SchoolSubmitFormPageState extends State<SchoolSubmitFormPage> {
                 child: TextField(
                   controller: learnersParticipatedFemale,
                   keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                   decoration: InputDecoration(
-                    labelText: 'Female',
+                    labelText: 'Learners (Female)',
                     filled: true,
                     fillColor: Colors.grey[100],
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
@@ -704,10 +850,11 @@ class _SchoolSubmitFormPageState extends State<SchoolSubmitFormPage> {
             children: [
               Expanded(
                 child: TextField(
-                  controller: learnersParticipatedIP,
+                  controller: ipParticipatedMale,
                   keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                   decoration: InputDecoration(
-                    labelText: 'IP',
+                    labelText: 'IP (Male)',
                     filled: true,
                     fillColor: Colors.grey[100],
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
@@ -717,10 +864,29 @@ class _SchoolSubmitFormPageState extends State<SchoolSubmitFormPage> {
               const SizedBox(width: 8),
               Expanded(
                 child: TextField(
-                  controller: learnersParticipatedMuslim,
+                  controller: ipParticipatedFemale,
                   keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                   decoration: InputDecoration(
-                    labelText: 'Muslim',
+                    labelText: 'IP (Female)',
+                    filled: true,
+                    fillColor: Colors.grey[100],
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: muslimParticipatedMale,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  decoration: InputDecoration(
+                    labelText: 'Muslim (Male)',
                     filled: true,
                     fillColor: Colors.grey[100],
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
@@ -730,10 +896,43 @@ class _SchoolSubmitFormPageState extends State<SchoolSubmitFormPage> {
               const SizedBox(width: 8),
               Expanded(
                 child: TextField(
-                  controller: learnersParticipatedPWD,
+                  controller: muslimParticipatedFemale,
                   keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                   decoration: InputDecoration(
-                    labelText: 'With Disability',
+                    labelText: 'Muslim (Female)',
+                    filled: true,
+                    fillColor: Colors.grey[100],
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: pwdParticipatedMale,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  decoration: InputDecoration(
+                    labelText: 'With Disability (Male)',
+                    filled: true,
+                    fillColor: Colors.grey[100],
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: TextField(
+                  controller: pwdParticipatedFemale,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  decoration: InputDecoration(
+                    labelText: 'With Disability (Female)',
                     filled: true,
                     fillColor: Colors.grey[100],
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
@@ -793,20 +992,10 @@ class _SchoolSubmitFormPageState extends State<SchoolSubmitFormPage> {
   Future<void> _submit() async {
     setState(() {
       _submitting = true;
-      // _uploadingFiles = true;
     });
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
 
-    // Remove file upload logic
-    // List<String> fileUrls = [];
-    // if (_pickedFiles.isNotEmpty) {
-    //   fileUrls = await _uploadFilesToSupabase(_pickedFiles);
-    // }
-
-    // setState(() => _uploadingFiles = false);
-
-    // Parse links (comma or newline separated)
     final List<String> links = linksController.text
         .split(RegExp(r'[\n,]'))
         .map((e) => e.trim())
@@ -825,30 +1014,37 @@ class _SchoolSubmitFormPageState extends State<SchoolSubmitFormPage> {
         'otherActivities': otherActivities.text,
       },
       'personnel': {
-        'teachingTotal': teachingPersonnelTotal.text,
-        'nonTeachingTotal': nonTeachingPersonnelTotal.text,
-        'teachingParticipated': teachingPersonnelParticipated.text,
-        'nonTeachingParticipated': nonTeachingPersonnelParticipated.text,
+        'teachingTotalMale': teachingPersonnelTotalMale.text,
+        'teachingTotalFemale': teachingPersonnelTotalFemale.text,
+        'nonTeachingTotalMale': nonTeachingPersonnelTotalMale.text,
+        'nonTeachingTotalFemale': nonTeachingPersonnelTotalFemale.text,
+        'teachingParticipatedMale': teachingPersonnelParticipatedMale.text,
+        'teachingParticipatedFemale': teachingPersonnelParticipatedFemale.text,
+        'nonTeachingParticipatedMale': nonTeachingPersonnelParticipatedMale.text,
+        'nonTeachingParticipatedFemale': nonTeachingPersonnelParticipatedFemale.text,
       },
       'learners': {
-        'male': learnersMale.text,
-        'female': learnersFemale.text,
-        'ip': learnersIP.text,
-        'muslim': learnersMuslim.text,
-        'pwd': learnersPWD.text,
+        'totalMale': learnersTotalMale.text,
+        'totalFemale': learnersTotalFemale.text,
+        'ipTotalMale': ipTotalMale.text,
+        'ipTotalFemale': ipTotalFemale.text,
+        'muslimTotalMale': muslimTotalMale.text,
+        'muslimTotalFemale': muslimTotalFemale.text,
+        'pwdTotalMale': pwdTotalMale.text,
+        'pwdTotalFemale': pwdTotalFemale.text,
         'participatedMale': learnersParticipatedMale.text,
         'participatedFemale': learnersParticipatedFemale.text,
-        'participatedIP': learnersParticipatedIP.text,
-        'participatedMuslim': learnersParticipatedMuslim.text,
-        'participatedPWD': learnersParticipatedPWD.text,
+        'ipParticipatedMale': ipParticipatedMale.text,
+        'ipParticipatedFemale': ipParticipatedFemale.text,
+        'muslimParticipatedMale': muslimParticipatedMale.text,
+        'muslimParticipatedFemale': muslimParticipatedFemale.text,
+        'pwdParticipatedMale': pwdParticipatedMale.text,
+        'pwdParticipatedFemale': pwdParticipatedFemale.text,
       },
       'postDrill': {
         'reviewedContingencyPlan': reviewedContingencyPlan,
         'issuesConcerns': issuesConcerns.text,
       },
-      // Remove attachments and attachmentNames
-      // 'attachments': fileUrls,
-      // 'attachmentNames': _pickedFiles.map((f) => f.name).toList(),
       'externalLinks': links,
     };
 
@@ -968,26 +1164,22 @@ class _SchoolSubmitFormPageState extends State<SchoolSubmitFormPage> {
                             ),
                           if (_step == 3)
                             ElevatedButton.icon(
-                              icon: _alreadySubmitted
-                                  ? const Icon(Icons.check_circle_outline)
-                                  : _submitting
-                                      ? SizedBox(
-                                          width: isMobile ? 14 : 18,
-                                          height: isMobile ? 14 : 18,
-                                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                                        )
-                                      : const Icon(Icons.send_rounded),
+                              icon: _submitting
+                                  ? SizedBox(
+                                      width: isMobile ? 14 : 18,
+                                      height: isMobile ? 14 : 18,
+                                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                    )
+                                  : const Icon(Icons.send_rounded),
                               label: Padding(
                                 padding: EdgeInsets.symmetric(vertical: isMobile ? 6 : 10),
                                 child: Text(
-                                  _alreadySubmitted
-                                    ? 'Already Submitted'
-                                    : (_submitting ? 'Submitting...' : 'Submit'),
+                                  _submitting ? 'Saving...' : 'Save',
                                   style: TextStyle(fontSize: isMobile ? 14 : 17, fontWeight: FontWeight.bold),
                                 ),
                               ),
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: _alreadySubmitted ? Colors.grey[400] : colorScheme.primary,
+                                backgroundColor: colorScheme.primary,
                                 foregroundColor: Colors.white,
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                                 padding: EdgeInsets.symmetric(
@@ -995,7 +1187,7 @@ class _SchoolSubmitFormPageState extends State<SchoolSubmitFormPage> {
                                   vertical: isMobile ? 6 : 10,
                                 ),
                               ),
-                              onPressed: (_submitting || _alreadySubmitted) ? null : _submit,
+                              onPressed: _submitting ? null : _submit,
                             ),
                         ],
                       ),

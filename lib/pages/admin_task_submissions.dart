@@ -135,7 +135,7 @@ class _AdminTaskSubmissionsPageState extends State<AdminTaskSubmissionsPage> {
                       };
                       // Map schoolId to submission
                       final Map<String, QueryDocumentSnapshot> subMap = {
-                        for (var s in submissions) (s['schoolId'] as String): s
+                        for (var s in submissions) (s['schooluid'] as String): s
                       };
 
                       // Build table rows

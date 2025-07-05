@@ -19,6 +19,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
   String? _error;
   bool _loading = false;
+  bool _obscurePassword = true; // <-- Add this line
 
   Future<void> _login() async {
     final email = _usernameController.text.trim();
@@ -215,14 +216,25 @@ class _LoginScreenState extends State<LoginScreen> {
                           const SizedBox(height: 18),
                           TextFormField(
                             controller: _passwordController,
-                            obscureText: true,
+                            obscureText: _obscurePassword, // <-- Change here
                             decoration: InputDecoration(
                               labelText: 'Password',
-                              prefixIcon: Icon(Icons.lock, color: black),
+                              prefixIcon: Icon(Icons.lock, color: Colors.black),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(16),
                               ),
                               contentPadding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                                  color: Colors.black,
+                                ),
+                                onPressed: () {
+                                  setState(() {
+                                    _obscurePassword = !_obscurePassword;
+                                  });
+                                },
+                              ),
                             ),
                             validator: (v) => v == null || v.isEmpty ? 'Enter password' : null,
                             onFieldSubmitted: (_) {

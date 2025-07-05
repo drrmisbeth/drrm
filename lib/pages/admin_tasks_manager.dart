@@ -4,9 +4,11 @@ import 'admin_task_submissions.dart';
 import 'dart:io';
 import 'dart:typed_data';
 import 'dart:convert';
-import 'package:csv/csv.dart';
+import 'package:excel/excel.dart';
 import 'package:file_saver/file_saver.dart';
 import 'package:flutter/services.dart' show rootBundle;
+import 'package:syncfusion_flutter_xlsio/xlsio.dart' as xlsio;
+
 
 class AdminTasksManagerPage extends StatefulWidget {
   final VoidCallback? onToggleDarkMode;
@@ -107,23 +109,6 @@ class _AdminTasksManagerPageState extends State<AdminTasksManagerPage> {
     );
   }
 
-  // CSV template header as a string (first 8 lines of your template)
-  static const String _csvTemplateHeader = '''
-,,,REPUBLIC OF THE PHILIPPINES,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-,,,DEPARTMENT OF EDUCATION,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-,,"SCHOOLS CONSOLIDATED REPORT ON THE CONDUCT OF QUARTERY NATIONWIDE SIMULTANEOUS EARTHQUAKE DRILL
-(DepEd Order No. 53, s. 2022)",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-No.,SCHOOL ID,SCHOOL NAME,PRE-DRILL,,,,,,,,,,,,,,ACTUAL DRILL,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,POST-DRILL,,Common issues and concerns encountered during the actual conduct of drill,"LINK FOR DOCUMENTATION
-(documentation)
-
-Google Drive Link"
-,,,With available Go Bags?,"With updated preparedness, evacuation and response plans?",With updated contingency plan?,With available early warning system?,With available emergency and rescue equipment?,With available First Aid Kits?,"With available communication equipment (internet, cellphone, two-way radio, etc.)?","With sufficient space in school/classrooms to conduct the ""Duck, Cover, and Hold""",Conducted coordination/preparatory meeting with LDRRMO/BDRRMCs?,Conducted an orientation to learners and school personnel on earthquake preparedness measures and the conduct of earthquake and fire drills?,Conducted an orientation to parents on earthquake preparedness measures and the conduct of earthquake and fire drills?,Learners have accomplished the Family Earthquake Preparedness Homework?,"Conducted alternative activities and/or Information, Education and Communication (IEC) campaigns on earthquake preparedness and fire prevention?",Additional Remarks,"Conducted ""DUCK, COVER, and HOLD""?",Conducted evacuation drill?,Additional Remarks,"No. of Personnel
-(Total Population)",,,"No. of Personnel Participated
-(Partipation Head Count)",,,No. of Learners (Total Population),,,,,,,,,,,,,No. of Learners Participated (Participation Head Count),,,,,,,,,,,,,,Conduct of post-activity exercises,Additional Remarks,,
-''';
-
   Future<void> _exportSubmissions(String taskId, String taskTitle) async {
     try {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -150,8 +135,8 @@ Google Drive Link"
       final Map<String, Map<String, dynamic>> schoolIdToSubmission = {};
       for (final doc in submissionsSnap.docs) {
         final data = doc.data() as Map<String, dynamic>;
-        if (data['schoolId'] != null) {
-          schoolIdToSubmission[data['schoolId']] = data;
+        if (data['schooluid'] != null) {
+          schoolIdToSubmission[data['schooluid']] = data;
         }
       }
 
@@ -176,6 +161,90 @@ Google Drive Link"
       }
 
       // --- 3. Define desired order ---
+      // --- PRE-DRILL FIELD ORDER AND HEADERS BASED ON IMAGE ---
+      List<String> preDrillOrder = [
+        'preDrill.conductedAlternativeActivitiesAndOrIECCampaignsOnEarthquakePreparednessAndFirePrevention',
+        'preDrill.conductedOrientationToParentsOnEarthquakePreparednessMeasuresAndConductOfEarthquakeAndFireDrills',
+        'preDrill.conductedCoordinationPreparatoryMeetingWithLDRRMOBDRRMCs',
+        'preDrill.conductedOrientationToLearnersAndSchoolPersonnelOnEarthquakePreparednessMeasuresAndTheConductOfEarthquakeAndFireDrills',
+        'preDrill.learnersHaveAccomplishedTheFamilyEarthquakePreparednessHomework',
+        'preDrill.withAvailableFirstAidKits',
+        'preDrill.withAvailableGoBags',
+        'preDrill.withAvailableCommunicationEquipment',
+        'preDrill.withAvailableEarlyWarningSystem',
+        'preDrill.withAvailableEmergencyAndRescueEquipment',
+        'preDrill.withSufficientSpaceInSchoolClassRoomsToConductTheDuckCoverAndHold',
+        'preDrill.withUpdatedContingencyPlan',
+        'preDrill.withUpdatedPreparednessEvacuationAndResponsePlans',
+      ];
+      Map<String, String> preDrillHeaders = {
+        'preDrill.conductedAlternativeActivitiesAndOrIECCampaignsOnEarthquakePreparednessAndFirePrevention':
+            'Conducted\nalternative\nactivities\nand/or\nInformation,\nEducation and\nCommunication (IEC)\ncampaigns on\nearthquake\npreparedness\nand fire\nprevention?',
+        'preDrill.conductedOrientationToParentsOnEarthquakePreparednessMeasuresAndConductOfEarthquakeAndFireDrills':
+            'Conducted an\norientation to\nparents on\nearthquake\npreparedness\nmeasures and\nthe conduct\nof earthquake\nand fire drills?',
+        'preDrill.conductedCoordinationPreparatoryMeetingWithLDRRMOBDRRMCs':
+            'Conducted\ncoordination/\npreparatory\nmeeting with\nLDRRMO/BDRRMC?',
+        'preDrill.conductedOrientationToLearnersAndSchoolPersonnelOnEarthquakePreparednessMeasuresAndTheConductOfEarthquakeAndFireDrills':
+            'Conducted\norientation to\nlearners and\nschool personnel\non earthquake\npreparedness\nmeasures and\nthe conduct of\nearthquake and\nfire drills?',
+        'preDrill.learnersHaveAccomplishedTheFamilyEarthquakePreparednessHomework':
+            'Learners have\naccomplished\nthe Family\nEarthquake\nPreparedness\nHomework?',
+        'preDrill.withAvailableFirstAidKits':
+            'With available\nFirst Aid Kit?',
+        'preDrill.withAvailableGoBags':
+            'With available\nGo Bags?',
+        'preDrill.withAvailableCommunicationEquipment':
+            'With available\ncommunication\nequipment\n(internet,\ncellphone,\ntwo-way\nradio, etc.)?',
+        'preDrill.withAvailableEarlyWarningSystem':
+            'With available\nearly warning\nsystem?',
+        'preDrill.withAvailableEmergencyAndRescueEquipment':
+            'With available\nemergency and\nrescue\nequipment?',
+        'preDrill.withSufficientSpaceInSchoolClassRoomsToConductTheDuckCoverAndHold':
+            'With sufficient\nspace in\nschool/class\nrooms to\nconduct the\n"Duck, Cover,\nand Hold"?',
+        'preDrill.withUpdatedContingencyPlan':
+            'With updated\ncontingency\nplan?',
+        'preDrill.withUpdatedPreparednessEvacuationAndResponsePlans':
+            'With updated\npreparedness,\nevacuation,\nand response\nplans?',
+      };
+
+      // --- New: Define personnel and learners export order ---
+      // Remove: Total Male (Teaching + Non-Teaching), Total Female (Teaching + Non-Teaching), Total Personnel (Male + Female), Total Participated (Teaching + Non-Teaching)
+      List<String> personnelOrder = [
+        'personnel.teachingTotalMale',
+        'personnel.teachingTotalFemale',
+        'personnel.nonTeachingTotalMale',
+        'personnel.nonTeachingTotalFemale',
+        'personnel.teachingParticipatedMale',
+        'personnel.teachingParticipatedFemale',
+        'personnel.nonTeachingParticipatedMale',
+        'personnel.nonTeachingParticipatedFemale',
+      ];
+      List<String> learnersOrder = [
+        'learners.totalMale',
+        'learners.totalFemale',
+        'learners.total', // new total learners column
+        'learners.ipTotalMale',
+        'learners.ipTotalFemale',
+        'learners.ipTotal', // <-- Add total IP column
+        'learners.muslimTotalMale',
+        'learners.muslimTotalFemale',
+        'learners.muslimTotal', // <-- Add total Muslim column
+        'learners.pwdTotalMale',
+        'learners.pwdTotalFemale',
+        'learners.pwdTotal', // <-- Add total PWD column
+        'learners.participatedMale',
+        'learners.participatedFemale',
+        'learners.participatedTotal', // new total learners participated column
+        'learners.ipParticipatedMale',
+        'learners.ipParticipatedFemale',
+        'learners.ipParticipatedTotal', // <-- Add total IP participated column
+        'learners.muslimParticipatedMale',
+        'learners.muslimParticipatedFemale',
+        'learners.muslimParticipatedTotal', // <-- Add total Muslim participated column
+        'learners.pwdParticipatedMale',
+        'learners.pwdParticipatedFemale',
+        'learners.pwdParticipatedTotal', // <-- Add total PWD participated column
+      ];
+
       List<String> preDrillFields = [];
       List<String> actualDrillFields = [];
       List<String> learnersFields = [];
@@ -198,18 +267,32 @@ Google Drive Link"
           remainingFields.add(f);
         }
       }
-      preDrillFields.sort();
+
+      // --- Sort preDrillFields according to preDrillOrder, then append any extra fields at the end ---
+      List<String> orderedPreDrillFields = [
+        ...preDrillOrder.where((f) => preDrillFields.contains(f)),
+        ...preDrillFields.where((f) => !preDrillOrder.contains(f)).toList()..sort(),
+      ];
+
+      // --- Sort personnel and learners fields according to new order ---
+      List<String> orderedPersonnelFields = [
+        ...personnelOrder.where((f) => personnelFields.contains(f)),
+        ...personnelFields.where((f) => !personnelOrder.contains(f)).toList()..sort(),
+      ];
+      List<String> orderedLearnersFields = [
+        ...learnersOrder.where((f) => learnersFields.contains(f) || f == 'learners.total' || f == 'learners.participatedTotal'),
+        ...learnersFields.where((f) => !learnersOrder.contains(f)).toList()..sort(),
+      ];
+
       actualDrillFields.sort();
-      learnersFields.sort();
-      personnelFields.sort();
       postDrillFields.sort();
       remainingFields.sort();
 
       final List<String> fields = [
-        ...preDrillFields,
+        ...orderedPreDrillFields,
         ...actualDrillFields,
-        ...learnersFields,
-        ...personnelFields,
+        ...orderedPersonnelFields,
+        ...orderedLearnersFields,
         ...postDrillFields,
         ...remainingFields,
       ];
@@ -218,17 +301,36 @@ Google Drive Link"
       final unwanted = {'schoolId', 'schooluid', 'submittedAt', 'taskId'};
       List<String> filteredFields = fields.where((f) {
         final key = fieldKeyToHeader[f] ?? f;
-        // Remove if the last part of the key matches unwanted
         final last = key;
         return !unwanted.contains(last);
       }).toList();
 
       // --- Prepare prefix row and header row (prefix only once, skip "users") ---
+      // Remove the 4 columns from prefixRow/headerRow logic
       List<String> prefixRow = ['No.', '', ''];
-      List<String> headerRow = ['No.', 'schoolID', 'School Names']; // <-- Change "name" to "School Names"
+      List<String> headerRow = ['No.', 'schoolID', 'School Names'];
+      int preDrillStartCol = -1;
+      int preDrillColSpan = 0;
       String lastPrefix = '';
-      for (final f in filteredFields) {
+      int i = 0;
+      while (i < filteredFields.length) {
+        final f = filteredFields[i];
         final prefix = fieldKeyToPrefix[f] ?? '';
+        // Remove logic for the 4 columns
+        // if (f == 'personnel.totalMale') { ... }
+        // if (f == 'personnel.totalFemale') { ... }
+        // if (f == 'personnel.total') { ... }
+        // if (f == 'personnel.totalParticipatedMale') { ... }
+        // if (f == 'personnel.totalParticipatedFemale') { ... }
+        // if (f == 'personnel.participatedMale') { ... }
+        // if (f == 'personnel.participatedFemale') { ... }
+        // if (f == 'personnel.totalParticipated') { ... }
+        // All above blocks are removed.
+        // ...existing code for preDrill and other fields...
+        if (prefix == 'preDrill') {
+          // ...existing code...
+        }
+        // ...existing code...
         if (prefix.isEmpty || prefix == 'users') {
           prefixRow.add('');
         } else if (prefix != lastPrefix) {
@@ -238,12 +340,24 @@ Google Drive Link"
           prefixRow.add('');
         }
         headerRow.add(fieldKeyToHeader[f] ?? f);
+        i++;
       }
 
-      // --- 5. Prepare CSV rows for all schools ---
-      List<List<dynamic>> csvRows = [];
-      csvRows.add(prefixRow);
-      csvRows.add(headerRow);
+      // --- Add Yes/No row for preDrill and actualDrill fields only ---
+      List<String> yesNoRow = ['','',''];
+      for (final f in filteredFields) {
+        if (orderedPreDrillFields.contains(f) || actualDrillFields.contains(f)) {
+          yesNoRow.add('Yes/No');
+        } else {
+          yesNoRow.add('');
+        }
+      }
+
+      // --- 5. Prepare Excel rows for all schools ---
+      List<List<dynamic>> excelRows = [];
+      excelRows.add(prefixRow);
+      excelRows.add(headerRow);
+      excelRows.add(yesNoRow); // Insert Yes/No row here
       int rowNum = 1;
       for (final school in allSchools) {
         final schoolId = school['id'] ?? '';
@@ -269,7 +383,80 @@ Google Drive Link"
           }
           flatten(submission);
         }
-        csvRows.add([
+        // Compute combined personnel totals
+        int totalMale = 0;
+        int totalFemale = 0;
+        int teachingPartMale = 0;
+        int teachingPartFemale = 0;
+        int nonTeachingPartMale = 0;
+        int nonTeachingPartFemale = 0;
+        int learnersTotalMale = 0;
+        int learnersTotalFemale = 0;
+        int learnersParticipatedMale = 0;
+        int learnersParticipatedFemale = 0;
+
+        // --- New: Compute IP, Muslim, PWD totals and participated totals ---
+        int ipTotalMale = int.tryParse(flat['learners.ipTotalMale']?.toString() ?? '') ?? 0;
+        int ipTotalFemale = int.tryParse(flat['learners.ipTotalFemale']?.toString() ?? '') ?? 0;
+        int muslimTotalMale = int.tryParse(flat['learners.muslimTotalMale']?.toString() ?? '') ?? 0;
+        int muslimTotalFemale = int.tryParse(flat['learners.muslimTotalFemale']?.toString() ?? '') ?? 0;
+        int pwdTotalMale = int.tryParse(flat['learners.pwdTotalMale']?.toString() ?? '') ?? 0;
+        int pwdTotalFemale = int.tryParse(flat['learners.pwdTotalFemale']?.toString() ?? '') ?? 0;
+
+        int ipParticipatedMale = int.tryParse(flat['learners.ipParticipatedMale']?.toString() ?? '') ?? 0;
+        int ipParticipatedFemale = int.tryParse(flat['learners.ipParticipatedFemale']?.toString() ?? '') ?? 0;
+        int muslimParticipatedMale = int.tryParse(flat['learners.muslimParticipatedMale']?.toString() ?? '') ?? 0;
+        int muslimParticipatedFemale = int.tryParse(flat['learners.muslimParticipatedFemale']?.toString() ?? '') ?? 0;
+        int pwdParticipatedMale = int.tryParse(flat['learners.pwdParticipatedMale']?.toString() ?? '') ?? 0;
+        int pwdParticipatedFemale = int.tryParse(flat['learners.pwdParticipatedFemale']?.toString() ?? '') ?? 0;
+
+        // Compute combined personnel totals
+        if (flat['personnel.teachingTotalMale'] != null && flat['personnel.teachingTotalMale'].toString().isNotEmpty) {
+          totalMale += int.tryParse(flat['personnel.teachingTotalMale'].toString()) ?? 0;
+        }
+        if (flat['personnel.nonTeachingTotalMale'] != null && flat['personnel.nonTeachingTotalMale'].toString().isNotEmpty) {
+          totalMale += int.tryParse(flat['personnel.nonTeachingTotalMale'].toString()) ?? 0;
+        }
+        if (flat['personnel.teachingTotalFemale'] != null && flat['personnel.teachingTotalFemale'].toString().isNotEmpty) {
+          totalFemale += int.tryParse(flat['personnel.teachingTotalFemale'].toString()) ?? 0;
+        }
+        if (flat['personnel.nonTeachingTotalFemale'] != null && flat['personnel.nonTeachingTotalFemale'].toString().isNotEmpty) {
+          totalFemale += int.tryParse(flat['personnel.nonTeachingTotalFemale'].toString()) ?? 0;
+        }
+        if (flat['personnel.teachingParticipatedMale'] != null && flat['personnel.teachingParticipatedMale'].toString().isNotEmpty) {
+          teachingPartMale = int.tryParse(flat['personnel.teachingParticipatedMale'].toString()) ?? 0;
+        }
+        if (flat['personnel.nonTeachingParticipatedMale'] != null && flat['personnel.nonTeachingParticipatedMale'].toString().isNotEmpty) {
+          nonTeachingPartMale = int.tryParse(flat['personnel.nonTeachingParticipatedMale'].toString()) ?? 0;
+        }
+        if (flat['personnel.teachingParticipatedFemale'] != null && flat['personnel.teachingParticipatedFemale'].toString().isNotEmpty) {
+          teachingPartFemale = int.tryParse(flat['personnel.teachingParticipatedFemale'].toString()) ?? 0;
+        }
+        if (flat['personnel.nonTeachingParticipatedFemale'] != null && flat['personnel.nonTeachingParticipatedFemale'].toString().isNotEmpty) {
+          nonTeachingPartFemale = int.tryParse(flat['personnel.nonTeachingParticipatedFemale'].toString()) ?? 0;
+        }
+        if (flat['learners.totalMale'] != null && flat['learners.totalMale'].toString().isNotEmpty) {
+          learnersTotalMale = int.tryParse(flat['learners.totalMale'].toString()) ?? 0;
+        }
+        if (flat['learners.totalFemale'] != null && flat['learners.totalFemale'].toString().isNotEmpty) {
+          learnersTotalFemale = int.tryParse(flat['learners.totalFemale'].toString()) ?? 0;
+        }
+        if (flat['learners.participatedMale'] != null && flat['learners.participatedMale'].toString().isNotEmpty) {
+          learnersParticipatedMale = int.tryParse(flat['learners.participatedMale'].toString()) ?? 0;
+        }
+        if (flat['learners.participatedFemale'] != null && flat['learners.participatedFemale'].toString().isNotEmpty) {
+          learnersParticipatedFemale = int.tryParse(flat['learners.participatedFemale'].toString()) ?? 0;
+        }
+
+        // --- Add computed totals for IP, Muslim, PWD ---
+        flat['learners.ipTotal'] = ipTotalMale + ipTotalFemale;
+        flat['learners.muslimTotal'] = muslimTotalMale + muslimTotalFemale;
+        flat['learners.pwdTotal'] = pwdTotalMale + pwdTotalFemale;
+        flat['learners.ipParticipatedTotal'] = ipParticipatedMale + ipParticipatedFemale;
+        flat['learners.muslimParticipatedTotal'] = muslimParticipatedMale + muslimParticipatedFemale;
+        flat['learners.pwdParticipatedTotal'] = pwdParticipatedMale + pwdParticipatedFemale;
+
+        excelRows.add([
           rowNum++,
           schoolID,
           schoolName,
@@ -279,27 +466,190 @@ Google Drive Link"
 
       // --- Add 5 empty rows ---
       for (int i = 0; i < 5; i++) {
-        csvRows.add([]);
+        excelRows.add([]);
       }
 
       // --- Add signature rows ---
-      csvRows.add(['Prepared by:', '', '', 'Noted by:']);
-      csvRows.add(['_________________________', '', '', '_________________________']);
-      csvRows.add(['MARIBETH A. BALDONADO', '', '', 'RENATO T. BALLESTEROS PhD, CESO V']);
-      csvRows.add(['Date:', '', '', 'Date:']);
+      excelRows.add(['Prepared by:', '', '', 'Noted by:']);
+      excelRows.add(['_________________________', '', '', '_________________________']);
+      excelRows.add(['MARIBETH A. BALDONADO', '', '', 'RENATO T. BALLESTEROS PhD, CESO V']);
+      excelRows.add(['Date:', '', '', 'Date:']);
 
-      // --- 6. Convert to CSV string and save ---
-      String csvString = const ListToCsvConverter().convert(csvRows);
-      final Uint8List exportBytes = Uint8List.fromList(utf8.encode(csvString));
+      // --- 6. Convert to Excel file and save with template styling (Syncfusion) ---
+      final workbook = xlsio.Workbook();
+      final sheet = workbook.worksheets[0];
+      sheet.name = 'Sheet1';
+
+      // --- Style definitions ---
+      final headerStyle = workbook.styles.add('headerStyle');
+      headerStyle.bold = true;
+      headerStyle.hAlign = xlsio.HAlignType.center;
+      headerStyle.vAlign = xlsio.VAlignType.center;
+      headerStyle.wrapText = true;
+      headerStyle.backColor = '#F4CCCC'; // Light pink for preDrill header
+      headerStyle.fontColor = '#000000';
+
+      final prefixStyle = workbook.styles.add('prefixStyle');
+      prefixStyle.bold = true;
+      prefixStyle.hAlign = xlsio.HAlignType.center;
+      prefixStyle.vAlign = xlsio.VAlignType.center;
+      prefixStyle.backColor = '#F4CCCC';
+      prefixStyle.fontColor = '#000000';
+
+      final yesNoStyle = workbook.styles.add('yesNoStyle');
+      yesNoStyle.hAlign = xlsio.HAlignType.center;
+      yesNoStyle.vAlign = xlsio.VAlignType.center;
+      yesNoStyle.backColor = '#F4CCCC';
+      yesNoStyle.fontColor = '#000000';
+
+      final evenRowStyle = workbook.styles.add('evenRowStyle');
+      evenRowStyle.hAlign = xlsio.HAlignType.left;
+      evenRowStyle.vAlign = xlsio.VAlignType.center;
+      evenRowStyle.backColor = '#FFFFFF';
+      evenRowStyle.fontColor = '#000000';
+
+      final oddRowStyle = workbook.styles.add('oddRowStyle');
+      oddRowStyle.hAlign = xlsio.HAlignType.left;
+      oddRowStyle.vAlign = xlsio.VAlignType.center;
+      oddRowStyle.backColor = '#F9F9F9';
+      oddRowStyle.fontColor = '#000000';
+
+      // --- Additional styles for actualDrill, postDrill, and external links ---
+      final actualDrillStyle = workbook.styles.add('actualDrillStyle');
+      actualDrillStyle.bold = true;
+      actualDrillStyle.hAlign = xlsio.HAlignType.center;
+      actualDrillStyle.vAlign = xlsio.VAlignType.center;
+      actualDrillStyle.backColor = '#FFF2CC'; // Light yellow
+      actualDrillStyle.fontColor = '#000000';
+
+      final postDrillStyle = workbook.styles.add('postDrillStyle');
+      postDrillStyle.bold = true;
+      postDrillStyle.hAlign = xlsio.HAlignType.center;
+      postDrillStyle.vAlign = xlsio.VAlignType.center;
+      postDrillStyle.backColor = '#D9EAD3'; // Light green
+      postDrillStyle.fontColor = '#000000';
+
+      final externalLinkStyle = workbook.styles.add('externalLinkStyle');
+      externalLinkStyle.bold = true;
+      externalLinkStyle.hAlign = xlsio.HAlignType.center;
+      externalLinkStyle.vAlign = xlsio.VAlignType.center;
+      externalLinkStyle.backColor = '#CFE2F3'; // Light blue
+      externalLinkStyle.fontColor = '#000000';
+
+      // --- Border style ---
+      final border = xlsio.LineStyle.thin;
+      // --- Write prefix row ---
+      for (int col = 0; col < prefixRow.length; col++) {
+        final cell = sheet.getRangeByIndex(1, col + 1);
+        cell.setText(prefixRow[col].toString());
+        // Color by section
+        final field = col >= 3 && col - 3 < filteredFields.length ? filteredFields[col - 3] : '';
+        if (col < 3) {
+          cell.cellStyle = workbook.styles.add('prefixWhite$col')
+            ..backColor = '#FFFFFF'
+            ..fontColor = '#000000'
+            ..bold = true
+            ..hAlign = xlsio.HAlignType.center
+            ..vAlign = xlsio.VAlignType.center;
+        } else if (field.startsWith('preDrill.')) {
+          cell.cellStyle = prefixStyle;
+        } else if (field.startsWith('actualDrill.')) {
+          cell.cellStyle = actualDrillStyle;
+        } else if (field.startsWith('postDrill.')) {
+          cell.cellStyle = postDrillStyle;
+        } else if (field.startsWith('externalLink.')) {
+          cell.cellStyle = externalLinkStyle;
+        } else {
+          cell.cellStyle = prefixStyle;
+        }
+        cell.cellStyle.borders.all.lineStyle = border;
+        cell.cellStyle.borders.all.color = '#000000';
+      }
+      // Merge "preDrill" prefix cell if present
+      if (preDrillStartCol != -1 && preDrillColSpan > 1) {
+        sheet.getRangeByIndex(1, preDrillStartCol + 1, 1, preDrillColSpan).merge();
+      }
+      // --- Write header row ---
+      for (int col = 0; col < headerRow.length; col++) {
+        final cell = sheet.getRangeByIndex(2, col + 1);
+        cell.setText(headerRow[col].toString());
+        final field = col >= 3 && col - 3 < filteredFields.length ? filteredFields[col - 3] : '';
+        if (col < 3) {
+          cell.cellStyle = workbook.styles.add('headerWhite$col')
+            ..backColor = '#FFFFFF'
+            ..fontColor = '#000000'
+            ..bold = true
+            ..hAlign = xlsio.HAlignType.center
+            ..vAlign = xlsio.VAlignType.center
+            ..wrapText = true;
+        } else if (field.startsWith('preDrill.')) {
+          cell.cellStyle = headerStyle;
+        } else if (field.startsWith('actualDrill.')) {
+          cell.cellStyle = actualDrillStyle;
+        } else if (field.startsWith('postDrill.')) {
+          cell.cellStyle = postDrillStyle;
+        } else if (field.startsWith('externalLink.')) {
+          cell.cellStyle = externalLinkStyle;
+        } else {
+          cell.cellStyle = headerStyle;
+        }
+        cell.cellStyle.borders.all.lineStyle = border;
+        cell.cellStyle.borders.all.color = '#000000';
+      }
+      // --- Write Yes/No row ---
+      for (int col = 0; col < yesNoRow.length; col++) {
+        final cell = sheet.getRangeByIndex(3, col + 1);
+        cell.setText(yesNoRow[col].toString());
+        final field = col >= 3 && col - 3 < filteredFields.length ? filteredFields[col - 3] : '';
+        if (col < 3) {
+          cell.cellStyle = workbook.styles.add('yesNoWhite$col')
+            ..backColor = '#FFFFFF'
+            ..fontColor = '#000000'
+            ..hAlign = xlsio.HAlignType.center
+            ..vAlign = xlsio.VAlignType.center;
+        } else if (field.startsWith('preDrill.')) {
+          cell.cellStyle = yesNoStyle;
+        } else if (field.startsWith('actualDrill.')) {
+          cell.cellStyle = actualDrillStyle;
+        } else if (field.startsWith('postDrill.')) {
+          cell.cellStyle = postDrillStyle;
+        } else if (field.startsWith('externalLink.')) {
+          cell.cellStyle = externalLinkStyle;
+        } else {
+          cell.cellStyle = yesNoStyle;
+        }
+        cell.cellStyle.borders.all.lineStyle = border;
+        cell.cellStyle.borders.all.color = '#000000';
+      }
+      // --- Write data rows with plain white background ---
+      for (int row = 3; row < excelRows.length; row++) {
+        for (int col = 0; col < excelRows[row].length; col++) {
+          final cell = sheet.getRangeByIndex(row + 1, col + 1);
+          cell.setText(excelRows[row][col].toString());
+          cell.cellStyle = workbook.styles.add('dataWhite${row}_$col')
+            ..backColor = '#FFFFFF'
+            ..fontColor = '#000000'
+            ..hAlign = xlsio.HAlignType.left
+            ..vAlign = xlsio.VAlignType.center;
+          cell.cellStyle.borders.all.lineStyle = border;
+          cell.cellStyle.borders.all.color = '#000000';
+        }
+      }
+      // --- Set column widths for better spacing ---
+      for (int col = 0; col < headerRow.length; col++) {
+        sheet.setColumnWidthInPixels(col + 1, 140);
+      }
+      final List<int> excelBytes = workbook.saveAsStream();
+      workbook.dispose();
       await FileSaver.instance.saveFile(
         name: '$taskTitle-submissions',
-        bytes: exportBytes,
-        ext: 'csv',
-        mimeType: MimeType.csv,
+        bytes: Uint8List.fromList(excelBytes),
+        ext: 'xlsx',
+        mimeType: MimeType.other, // Excel MIME type
       );
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Exported ${csvRows.length - 2} schools for "$taskTitle".')),
+        SnackBar(content: Text('Exported ${excelRows.length - 2} schools for "$taskTitle".')),
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -1013,4 +1363,18 @@ Google Drive Link"
     ];
     return "${months[date.month]} ${date.day}, ${date.year}";
   }
+}
+
+// Add this helper function at the bottom of the file (outside the class)
+String _prettyField(String f) {
+  // Remove prefix and camelCase to words
+  final field = f.split('.').last
+    .replaceAllMapped(RegExp(r'([A-Z])'), (m) => ' ${m.group(0)}')
+    .replaceAll('Total', '')
+    .replaceAll('Participated', '')
+    .replaceAll('Male', '')
+    .replaceAll('Female', '')
+    .replaceAll('  ', ' ')
+    .trim();
+  return field[0].toUpperCase() + field.substring(1);
 }
