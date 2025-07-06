@@ -309,8 +309,9 @@ class _AdminTasksManagerPageState extends State<AdminTasksManagerPage> {
       List<String> headerRow = ['No.', 'schoolID', 'School Names'];
       List<String> yesNoRow = ['','',''];
 
-      // Track where to insert the personnel summary section
+      // Track where to insert the personnel and learners summary sections
       int personnelSummaryCol = -1;
+      int learnersSummaryCol = -1;
 
       int i = 0;
       while (i < filteredFields.length) {
@@ -328,6 +329,22 @@ class _AdminTasksManagerPageState extends State<AdminTasksManagerPage> {
           yesNoRow.add('');
           yesNoRow.add('');
           i++;
+          continue;
+        }
+        // --- Insert merged header for learners summary after learners fields ---
+        if (f == 'learners.totalMale') {
+          learnersSummaryCol = prefixRow.length;
+          prefixRow.add('Total No. of Learners');
+          prefixRow.add('');
+          prefixRow.add('');
+          headerRow.add('Male');
+          headerRow.add('Female');
+          headerRow.add('Total');
+          yesNoRow.add('');
+          yesNoRow.add('');
+          yesNoRow.add('');
+          // Skip the next two fields (learners.totalFemale, learners.total)
+          i += 3;
           continue;
         }
         final prefix = fieldKeyToPrefix[f] ?? '';
@@ -541,6 +558,7 @@ class _AdminTasksManagerPageState extends State<AdminTasksManagerPage> {
 
       // --- Border style ---
       final border = xlsio.LineStyle.thin;
+
       // --- Find preDrill prefix start and span for merging ---
       int preDrillStartCol = -1;
       int preDrillColSpan = 0;
@@ -560,7 +578,38 @@ class _AdminTasksManagerPageState extends State<AdminTasksManagerPage> {
         cell.setText(prefixRow[col].toString());
         // Color by section
         final field = col >= 3 && col - 3 < filteredFields.length ? filteredFields[col - 3] : '';
-        if (col < 3) {
+        // Merge and wrap for personnel summary
+        if (personnelSummaryCol != -1 && col == personnelSummaryCol) {
+          // Merge the 3 columns for the personnel summary header
+          sheet.getRangeByIndex(1, col + 1, 1, col + 3).merge();
+          sheet.getRangeByIndex(1, col + 2).setText('');
+          sheet.getRangeByIndex(1, col + 3).setText('');
+          cell.cellStyle = workbook.styles.add('personnelSummaryHeader')
+            ..backColor = '#FFF2CC'
+            ..fontColor = '#000000'
+            ..bold = true
+            ..hAlign = xlsio.HAlignType.center
+            ..vAlign = xlsio.VAlignType.center
+            ..wrapText = true;
+        } else if (learnersSummaryCol != -1 && col == learnersSummaryCol) {
+          // Merge the 3 columns for the learners summary header
+          sheet.getRangeByIndex(1, col + 1, 1, col + 3).merge();
+          sheet.getRangeByIndex(1, col + 2).setText('');
+          sheet.getRangeByIndex(1, col + 3).setText('');
+          cell.cellStyle = workbook.styles.add('learnersSummaryHeader')
+            ..backColor = '#FFF2CC'
+            ..fontColor = '#000000'
+            ..bold = true
+            ..hAlign = xlsio.HAlignType.center
+            ..vAlign = xlsio.VAlignType.center
+            ..wrapText = true;
+        } else if (
+          (personnelSummaryCol != -1 && (col == personnelSummaryCol + 1 || col == personnelSummaryCol + 2)) ||
+          (learnersSummaryCol != -1 && (col == learnersSummaryCol + 1 || col == learnersSummaryCol + 2))
+        ) {
+          // These cells are merged, skip styling/text
+          continue;
+        } else if (col < 3) {
           cell.cellStyle = workbook.styles.add('prefixWhite$col')
             ..backColor = '#FFFFFF'
             ..fontColor = '#000000'
