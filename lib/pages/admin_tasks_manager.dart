@@ -350,10 +350,11 @@ class _AdminTasksManagerPageState extends State<AdminTasksManagerPage> {
       }).toList();
 
       // --- Prepare prefix row and header row (prefix only once, skip "users") ---
-      List<String> prefixRow = ['No.', '', ''];
-      List<String> headerRow = ['No.', 'schoolID', 'School Names'];
+      List<String> prefixRow = ['No.', 'schoolID', 'School Names'];
+      List<String> headerRow = ['', '', ''];
       List<String> yesNoRow = ['','',''];
 
+      
       // Track where to insert the summary sections
       int personnelSummaryCol = -1;
       int personnelParticipatedSummaryCol = -1;
@@ -378,9 +379,6 @@ class _AdminTasksManagerPageState extends State<AdminTasksManagerPage> {
           headerRow.add('Male');
           headerRow.add('Female');
           headerRow.add('Total');
-          yesNoRow.add('');
-          yesNoRow.add('');
-          yesNoRow.add('');
           i++;
           continue;
         }
@@ -393,9 +391,6 @@ class _AdminTasksManagerPageState extends State<AdminTasksManagerPage> {
           headerRow.add('Male');
           headerRow.add('Female');
           headerRow.add('Total');
-          yesNoRow.add('');
-          yesNoRow.add('');
-          yesNoRow.add('');
           i++;
           continue;
         }
@@ -408,9 +403,6 @@ class _AdminTasksManagerPageState extends State<AdminTasksManagerPage> {
           headerRow.add('Male');
           headerRow.add('Female');
           headerRow.add('Total');
-          yesNoRow.add('');
-          yesNoRow.add('');
-          yesNoRow.add('');
           i++;
           continue;
         }
@@ -423,9 +415,6 @@ class _AdminTasksManagerPageState extends State<AdminTasksManagerPage> {
           headerRow.add('Male');
           headerRow.add('Female');
           headerRow.add('Total');
-          yesNoRow.add('');
-          yesNoRow.add('');
-          yesNoRow.add('');
           i++;
           continue;
         }
@@ -438,9 +427,6 @@ class _AdminTasksManagerPageState extends State<AdminTasksManagerPage> {
           headerRow.add('Male');
           headerRow.add('Female');
           headerRow.add('Total');
-          yesNoRow.add('');
-          yesNoRow.add('');
-          yesNoRow.add('');
           i++;
           continue;
         }
@@ -453,9 +439,6 @@ class _AdminTasksManagerPageState extends State<AdminTasksManagerPage> {
           headerRow.add('Male');
           headerRow.add('Female');
           headerRow.add('Total');
-          yesNoRow.add('');
-          yesNoRow.add('');
-          yesNoRow.add('');
           i++;
           continue;
         }
@@ -468,9 +451,6 @@ class _AdminTasksManagerPageState extends State<AdminTasksManagerPage> {
           headerRow.add('Male');
           headerRow.add('Female');
           headerRow.add('Total');
-          yesNoRow.add('');
-          yesNoRow.add('');
-          yesNoRow.add('');
           i++;
           continue;
         }
@@ -483,9 +463,6 @@ class _AdminTasksManagerPageState extends State<AdminTasksManagerPage> {
           headerRow.add('Male');
           headerRow.add('Female');
           headerRow.add('Total');
-          yesNoRow.add('');
-          yesNoRow.add('');
-          yesNoRow.add('');
           i++;
           continue;
         }
@@ -498,9 +475,6 @@ class _AdminTasksManagerPageState extends State<AdminTasksManagerPage> {
           headerRow.add('Male');
           headerRow.add('Female');
           headerRow.add('Total');
-          yesNoRow.add('');
-          yesNoRow.add('');
-          yesNoRow.add('');
           i++;
           continue;
         }
@@ -513,26 +487,34 @@ class _AdminTasksManagerPageState extends State<AdminTasksManagerPage> {
           headerRow.add('Male');
           headerRow.add('Female');
           headerRow.add('Total');
-          yesNoRow.add('');
-          yesNoRow.add('');
-          yesNoRow.add('');
           i++;
           continue;
         }
         final prefix = fieldKeyToPrefix[f] ?? '';
-        if (prefix.isEmpty || prefix == 'users') {
-          prefixRow.add('');
-        } else if (i == 0 || prefix != fieldKeyToPrefix[filteredFields[i-1]]) {
-          prefixRow.add(prefix);
-        } else {
-          prefixRow.add('');
+        // Move preDrill fields up to
+        if (prefix == 'preDrill') {
+          prefixRow.add(fieldKeyToHeader[f] ?? f);
+        } else if (prefix.isEmpty || prefix == 'users') {
+          prefixRow.add(fieldKeyToHeader[f] ?? f);
+        } else if (prefix == 'actualDrill') {
+          prefixRow.add(fieldKeyToHeader[f] ?? f);
         }
-        headerRow.add(fieldKeyToHeader[f] ?? f);
-        // Yes/No row
-        if (orderedPreDrillFields.contains(f) || actualDrillFields.contains(f)) {
-          yesNoRow.add('Yes/No');
+         else if (prefix == 'postDrill') {
+          prefixRow.add(fieldKeyToHeader[f] ?? f);
+        }
+         else if (i == 0 || prefix != fieldKeyToPrefix[filteredFields[i-1]]) {
+          prefixRow.add(fieldKeyToHeader[f] ?? f);
         } else {
-          yesNoRow.add('');
+          prefixRow.add(fieldKeyToHeader[f] ?? f);
+        }
+        // Yes/No row
+        if (orderedPreDrillFields.contains(f) ||
+    (actualDrillFields.contains(f))) {
+  headerRow.add('Yes/No');
+        } else if (actualDrillFields.contains('otherActivities')) {
+          headerRow.add('');
+        } else {
+          headerRow.add('');
         }
         i++;
       }
@@ -730,10 +712,10 @@ class _AdminTasksManagerPageState extends State<AdminTasksManagerPage> {
       }
 
       // --- Add signature rows ---
-      excelRows.add(['Prepared by:', '', '', 'Noted by:']);
-      excelRows.add(['_________________________', '', '', '_________________________']);
-      excelRows.add(['MARIBETH A. BALDONADO', '', '', 'RENATO T. BALLESTEROS PhD, CESO V']);
-      excelRows.add(['Date:', '', '', 'Date:']);
+      excelRows.add(['','','Prepared by:', '', '','','','','', 'Noted by:']);
+      excelRows.add(['','','___________________________________', '','', '','','','', '___________________________________']);
+      excelRows.add(['','','MARIBETH A. BALDONADO', '', '','','','','', 'RENATO T. BALLESTEROS PhD, CESO V']);
+      excelRows.add(['','','Date:', '', '','','','','', 'Date:']);
 
       // --- 6. Convert to Excel file and save with template styling (Syncfusion) ---
       final workbook = xlsio.Workbook();
@@ -741,6 +723,7 @@ class _AdminTasksManagerPageState extends State<AdminTasksManagerPage> {
       sheet.name = 'Sheet1';
 
       // --- Style definitions ---
+    
       final headerStyle = workbook.styles.add('headerStyle');
       headerStyle.bold = true;
       headerStyle.hAlign = xlsio.HAlignType.center;
@@ -799,7 +782,6 @@ class _AdminTasksManagerPageState extends State<AdminTasksManagerPage> {
       // --- Border style ---
       final border = xlsio.LineStyle.thin;
 
-      // --- Find preDrill prefix start and span for merging ---
       int preDrillStartCol = -1;
       int preDrillColSpan = 0;
       for (int col = 3; col < prefixRow.length; col++) {
@@ -812,12 +794,11 @@ class _AdminTasksManagerPageState extends State<AdminTasksManagerPage> {
         }
       }
 
-      // --- Write prefix row ---
+      
       // Adjusted row indices due to extra empty row at the top
       for (int col = 0; col < prefixRow.length; col++) {
         final cell = sheet.getRangeByIndex(2, col + 1);
         cell.setText(prefixRow[col].toString());
-        // Color by section
         final field = col >= 3 && col - 3 < filteredFields.length ? filteredFields[col - 3] : '';
         // Merge and style for summary sections
         if (personnelSummaryCol != -1 && col == personnelSummaryCol) {
@@ -850,7 +831,7 @@ class _AdminTasksManagerPageState extends State<AdminTasksManagerPage> {
           sheet.getRangeByIndex(2, col + 2).setText('');
           sheet.getRangeByIndex(2, col + 3).setText('');
           cell.cellStyle = workbook.styles.add('learnersSummaryHeader')
-            ..backColor = '#CFE2F3'
+            ..backColor = '#FFF2CC'
             ..fontColor = '#000000'
             ..bold = true
             ..hAlign = xlsio.HAlignType.center
@@ -862,7 +843,7 @@ class _AdminTasksManagerPageState extends State<AdminTasksManagerPage> {
           sheet.getRangeByIndex(2, col + 2).setText('');
           sheet.getRangeByIndex(2, col + 3).setText('');
           cell.cellStyle = workbook.styles.add('ipLearnersSummaryHeader')
-            ..backColor = '#CFE2F3'
+            ..backColor = '#FFF2CC'
             ..fontColor = '#000000'
             ..bold = true
             ..hAlign = xlsio.HAlignType.center
@@ -874,7 +855,7 @@ class _AdminTasksManagerPageState extends State<AdminTasksManagerPage> {
           sheet.getRangeByIndex(2, col + 2).setText('');
           sheet.getRangeByIndex(2, col + 3).setText('');
           cell.cellStyle = workbook.styles.add('muslimLearnersSummaryHeader')
-            ..backColor = '#CFE2F3'
+            ..backColor = '#FFF2CC'
             ..fontColor = '#000000'
             ..bold = true
             ..hAlign = xlsio.HAlignType.center
@@ -886,7 +867,7 @@ class _AdminTasksManagerPageState extends State<AdminTasksManagerPage> {
           sheet.getRangeByIndex(2, col + 2).setText('');
           sheet.getRangeByIndex(2, col + 3).setText('');
           cell.cellStyle = workbook.styles.add('learnersParticipatedSummaryHeader')
-            ..backColor = '#CFE2F3'
+            ..backColor = '#FFF2CC'
             ..fontColor = '#000000'
             ..bold = true
             ..hAlign = xlsio.HAlignType.center
@@ -898,7 +879,7 @@ class _AdminTasksManagerPageState extends State<AdminTasksManagerPage> {
           sheet.getRangeByIndex(2, col + 2).setText('');
           sheet.getRangeByIndex(2, col + 3).setText('');
           cell.cellStyle = workbook.styles.add('ipLearnersParticipatedSummaryHeader')
-            ..backColor = '#CFE2F3'
+            ..backColor = '#FFF2CC'
             ..fontColor = '#000000'
             ..bold = true
             ..hAlign = xlsio.HAlignType.center
@@ -910,7 +891,7 @@ class _AdminTasksManagerPageState extends State<AdminTasksManagerPage> {
           sheet.getRangeByIndex(2, col + 2).setText('');
           sheet.getRangeByIndex(2, col + 3).setText('');
           cell.cellStyle = workbook.styles.add('muslimLearnersParticipatedSummaryHeader')
-            ..backColor = '#CFE2F3'
+            ..backColor = '#FFF2CC'
             ..fontColor = '#000000'
             ..bold = true
             ..hAlign = xlsio.HAlignType.center
@@ -922,7 +903,7 @@ class _AdminTasksManagerPageState extends State<AdminTasksManagerPage> {
           sheet.getRangeByIndex(2, col + 2).setText('');
           sheet.getRangeByIndex(2, col + 3).setText('');
           cell.cellStyle = workbook.styles.add('pwdLearnersSummaryHeader')
-            ..backColor = '#CFE2F3'
+            ..backColor = '#FFF2CC'
             ..fontColor = '#000000'
             ..bold = true
             ..hAlign = xlsio.HAlignType.center
@@ -934,7 +915,7 @@ class _AdminTasksManagerPageState extends State<AdminTasksManagerPage> {
           sheet.getRangeByIndex(2, col + 2).setText('');
           sheet.getRangeByIndex(2, col + 3).setText('');
           cell.cellStyle = workbook.styles.add('pwdLearnersParticipatedSummaryHeader')
-            ..backColor = '#CFE2F3'
+            ..backColor = '#FFF2CC'
             ..fontColor = '#000000'
             ..bold = true
             ..hAlign = xlsio.HAlignType.center
@@ -975,10 +956,70 @@ class _AdminTasksManagerPageState extends State<AdminTasksManagerPage> {
         cell.cellStyle.borders.all.lineStyle = border;
         cell.cellStyle.borders.all.color = '#000000';
       }
-      // Merge "preDrill" prefix cell if present
-      if (preDrillStartCol != -1 && preDrillColSpan > 1) {
-        sheet.getRangeByIndex(2, preDrillStartCol + 1, 2, preDrillColSpan).merge();
-      }
+      for (int col = 4; col <= 60; col++) {
+  final cell = sheet.getRangeByIndex(2, col);
+  cell.cellStyle.wrapText = true;
+  cell.cellStyle.hAlign = xlsio.HAlignType.center;
+  cell.cellStyle.vAlign = xlsio.VAlignType.center;
+}
+for (int col = 4; col <= 16; col++) {
+  final cell = sheet.getRangeByIndex(3, col);
+  cell.cellStyle.backColor = '#f4cccc';     
+  cell.cellStyle.fontColor = '#000000';      // Black text (optional)
+  cell.cellStyle.bold = true;                // Optional: bold text
+  cell.cellStyle.hAlign = xlsio.HAlignType.center;
+  cell.cellStyle.vAlign = xlsio.VAlignType.center;
+  cell.cellStyle.wrapText = true;            // Optional: enable wrapping
+}
+
+for (int col = 17; col <= 19; col++) {
+  final cell = sheet.getRangeByIndex(3, col);
+  cell.cellStyle.backColor = '#FFF2CC';     
+  cell.cellStyle.fontColor = '#000000';      // Black text (optional)
+  cell.cellStyle.bold = true;                // Optional: bold text
+  cell.cellStyle.hAlign = xlsio.HAlignType.center;
+  cell.cellStyle.vAlign = xlsio.VAlignType.center;
+  cell.cellStyle.wrapText = true;            // Optional: enable wrapping
+}
+
+for (int col = 26; col <= 49; col++) {
+  final cell = sheet.getRangeByIndex(2, col);
+  cell.cellStyle.backColor = '#FFF2CC';     
+  cell.cellStyle.fontColor = '#000000';      // Black text (optional)        // Optional: enable wrapping
+}
+for (int col = 26; col <= 49; col++) {
+  final cell = sheet.getRangeByIndex(3, col);
+  cell.cellStyle.backColor = '#FFF2CC';     
+  cell.cellStyle.fontColor = '#000000';      // Black text (optional)        // Optional: enable wrapping
+}
+// Loop through the desired rows and columns (e.g. rows 1–100, columns 1–20)
+for (int row = 1; row <= 70; row++) {
+  for (int col = 1; col <= 65; col++) {
+    final cell = sheet.getRangeByIndex(row, col);
+    cell.cellStyle.fontName = 'Bookman Old Style';
+  }
+}
+
+final int lastUsedRow = sheet.getLastRow();
+final int lastUsedCol = sheet.getLastColumn();
+
+// A1:BA54 = rows 1–54, cols 1–53 (BA = 53rd column)
+for (int row = 1; row <= lastUsedRow; row++) {
+  for (int col = 1; col <= lastUsedCol; col++) {
+    // Skip the protected range
+    if (row >= 1 && row <= 54 && col >= 1 && col <= 53) {
+      continue;
+    }
+
+    final cell = sheet.getRangeByIndex(row, col);
+    final borders = cell.cellStyle.borders;
+
+    borders.all.lineStyle = xlsio.LineStyle.thin;
+    borders.all.color = '#FFFFFF'; // White color
+  }
+}
+
+
       // --- Write header row ---
       for (int col = 0; col < headerRow.length; col++) {
         final cell = sheet.getRangeByIndex(3, col + 1);
@@ -1002,7 +1043,7 @@ class _AdminTasksManagerPageState extends State<AdminTasksManagerPage> {
             ..wrapText = true;
         } else if (learnersSummaryCol != -1 && col >= learnersSummaryCol && col < learnersSummaryCol + 3) {
           cell.cellStyle = workbook.styles.add('learnersSummarySubHeader$col')
-            ..backColor = '#CFE2F3'
+            ..backColor = '#FFF2CC'
             ..fontColor = '#000000'
             ..bold = true
             ..hAlign = xlsio.HAlignType.center
@@ -1010,7 +1051,7 @@ class _AdminTasksManagerPageState extends State<AdminTasksManagerPage> {
             ..wrapText = true;
         } else if (ipLearnersSummaryCol != -1 && col >= ipLearnersSummaryCol && col < ipLearnersSummaryCol + 3) {
           cell.cellStyle = workbook.styles.add('ipLearnersSummarySubHeader$col')
-            ..backColor = '#CFE2F3'
+            ..backColor = '#FFF2CC'
             ..fontColor = '#000000'
             ..bold = true
             ..hAlign = xlsio.HAlignType.center
@@ -1018,7 +1059,7 @@ class _AdminTasksManagerPageState extends State<AdminTasksManagerPage> {
             ..wrapText = true;
         } else if (muslimLearnersSummaryCol != -1 && col >= muslimLearnersSummaryCol && col < muslimLearnersSummaryCol + 3) {
           cell.cellStyle = workbook.styles.add('muslimLearnersSummarySubHeader$col')
-            ..backColor = '#CFE2F3'
+            ..backColor = '#FFF2CC'
             ..fontColor = '#000000'
             ..bold = true
             ..hAlign = xlsio.HAlignType.center
@@ -1026,7 +1067,7 @@ class _AdminTasksManagerPageState extends State<AdminTasksManagerPage> {
             ..wrapText = true;
         } else if (learnersParticipatedSummaryCol != -1 && col >= learnersParticipatedSummaryCol && col < learnersParticipatedSummaryCol + 3) {
           cell.cellStyle = workbook.styles.add('learnersParticipatedSummarySubHeader$col')
-            ..backColor = '#CFE2F3'
+            ..backColor = '#FFF2CC'
             ..fontColor = '#000000'
             ..bold = true
             ..hAlign = xlsio.HAlignType.center
@@ -1034,7 +1075,7 @@ class _AdminTasksManagerPageState extends State<AdminTasksManagerPage> {
             ..wrapText = true;
         } else if (ipLearnersParticipatedSummaryCol != -1 && col >= ipLearnersParticipatedSummaryCol && col < ipLearnersParticipatedSummaryCol + 3) {
           cell.cellStyle = workbook.styles.add('ipLearnersParticipatedSummarySubHeader$col')
-            ..backColor = '#CFE2F3'
+            ..backColor = '#FFF2CC'
             ..fontColor = '#000000'
             ..bold = true
             ..hAlign = xlsio.HAlignType.center
@@ -1043,7 +1084,7 @@ class _AdminTasksManagerPageState extends State<AdminTasksManagerPage> {
         } else if (muslimLearnersParticipatedSummaryCol != -1 && col >= muslimLearnersParticipatedSummaryCol && col < muslimLearnersParticipatedSummaryCol + 3) {
           // Add blue background for "Total No. of Muslim Learners Participated" columns
           cell.cellStyle = workbook.styles.add('muslimLearnersParticipatedSummarySubHeader$col')
-            ..backColor = '#CFE2F3'
+            ..backColor = '#FFF2CC'
             ..fontColor = '#000000'
             ..bold = true
             ..hAlign = xlsio.HAlignType.center
@@ -1051,7 +1092,7 @@ class _AdminTasksManagerPageState extends State<AdminTasksManagerPage> {
             ..wrapText = true;
         } else if (pwdLearnersSummaryCol != -1 && col >= pwdLearnersSummaryCol && col < pwdLearnersSummaryCol + 3) {
           cell.cellStyle = workbook.styles.add('pwdLearnersSummarySubHeader$col')
-            ..backColor = '#CFE2F3'
+            ..backColor = '#FFF2CC'
             ..fontColor = '#000000'
             ..bold = true
             ..hAlign = xlsio.HAlignType.center
@@ -1059,7 +1100,7 @@ class _AdminTasksManagerPageState extends State<AdminTasksManagerPage> {
             ..wrapText = true;
         } else if (pwdLearnersParticipatedSummaryCol != -1 && col >= pwdLearnersParticipatedSummaryCol && col < pwdLearnersParticipatedSummaryCol + 3) {
           cell.cellStyle = workbook.styles.add('pwdLearnersParticipatedSummarySubHeader$col')
-            ..backColor = '#CFE2F3'
+            ..backColor = '#FFF2CC'
             ..fontColor = '#000000'
             ..bold = true
             ..hAlign = xlsio.HAlignType.center
@@ -1069,72 +1110,62 @@ class _AdminTasksManagerPageState extends State<AdminTasksManagerPage> {
         cell.cellStyle.borders.all.lineStyle = border;
         cell.cellStyle.borders.all.color = '#000000';
       }
+      
+sheet.getRangeByIndex(2, 1).rowHeight = 150;
 
-      // --- Write Yes/No row ---
-      for (int col = 0; col < yesNoRow.length; col++) {
-        final cell = sheet.getRangeByIndex(4, col + 1);
-        cell.setText(yesNoRow[col].toString());
-        // Special: Style personnel summary columns
-        if (personnelSummaryCol != -1 && col >= personnelSummaryCol && col < personnelSummaryCol + 3) {
-          cell.cellStyle = workbook.styles.add('personnelSummaryYesNo$col')
-            ..backColor = '#FFF2CC'
-            ..fontColor = '#000000'
-            ..hAlign = xlsio.HAlignType.center
-            ..vAlign = xlsio.VAlignType.center;
-        } else if (personnelParticipatedSummaryCol != -1 && col >= personnelParticipatedSummaryCol && col < personnelParticipatedSummaryCol + 3) {
-          cell.cellStyle = workbook.styles.add('personnelParticipatedSummaryYesNo$col')
-            ..backColor = '#FFF2CC'
-            ..fontColor = '#000000'
-            ..hAlign = xlsio.HAlignType.center
-            ..vAlign = xlsio.VAlignType.center;
-        } else if (learnersSummaryCol != -1 && col >= learnersSummaryCol && col < learnersSummaryCol + 3) {
-          cell.cellStyle = workbook.styles.add('learnersSummaryYesNo$col')
-            ..backColor = '#CFE2F3'
-            ..fontColor = '#000000'
-            ..hAlign = xlsio.HAlignType.center
-            ..vAlign = xlsio.VAlignType.center;
-        } else if (ipLearnersSummaryCol != -1 && col >= ipLearnersSummaryCol && col < ipLearnersSummaryCol + 3) {
-          cell.cellStyle = workbook.styles.add('ipLearnersSummaryYesNo$col')
-            ..backColor = '#CFE2F3'
-            ..fontColor = '#000000'
-            ..hAlign = xlsio.HAlignType.center
-            ..vAlign = xlsio.VAlignType.center;
-        } else if (muslimLearnersSummaryCol != -1 && col >= muslimLearnersSummaryCol && col < muslimLearnersSummaryCol + 3) {
-          cell.cellStyle = workbook.styles.add('muslimLearnersSummaryYesNo$col')
-            ..backColor = '#CFE2F3'
-            ..fontColor = '#000000'
-            ..hAlign = xlsio.HAlignType.center
-            ..vAlign = xlsio.VAlignType.center;
-        } else if (learnersParticipatedSummaryCol != -1 && col >= learnersParticipatedSummaryCol && col < learnersParticipatedSummaryCol + 3) {
-          cell.cellStyle = workbook.styles.add('learnersParticipatedSummaryYesNo$col')
-            ..backColor = '#CFE2F3'
-            ..fontColor = '#000000'
-            ..hAlign = xlsio.HAlignType.center
-            ..vAlign = xlsio.VAlignType.center;
-        } else if (ipLearnersParticipatedSummaryCol != -1 && col >= ipLearnersParticipatedSummaryCol && col < ipLearnersParticipatedSummaryCol + 3) {
-          cell.cellStyle = workbook.styles.add('ipLearnersParticipatedSummaryYesNo$col')
-            ..backColor = '#CFE2F3'
-            ..fontColor = '#000000'
-            ..hAlign = xlsio.HAlignType.center
-            ..vAlign = xlsio.VAlignType.center;
-        } else if (pwdLearnersSummaryCol != -1 && col >= pwdLearnersSummaryCol && col < pwdLearnersSummaryCol + 3) {
-          cell.cellStyle = workbook.styles.add('pwdLearnersSummaryYesNo$col')
-            ..backColor = '#CFE2F3'
-            ..fontColor = '#000000'
-            ..hAlign = xlsio.HAlignType.center
-            ..vAlign = xlsio.VAlignType.center;
-        } else if (pwdLearnersParticipatedSummaryCol != -1 && col >= pwdLearnersParticipatedSummaryCol && col < pwdLearnersParticipatedSummaryCol + 3) {
-          cell.cellStyle = workbook.styles.add('pwdLearnersParticipatedSummaryYesNo$col')
-            ..backColor = '#CFE2F3'
-            ..fontColor = '#000000'
-            ..hAlign = xlsio.HAlignType.center
-            ..vAlign = xlsio.VAlignType.center;
-        } else {
-          // ...existing style logic...
-        }
-        cell.cellStyle.borders.all.lineStyle = border;
-        cell.cellStyle.borders.all.color = '#000000';
-      }
+
+      // --- Merge and set "drill proper" in the first row, columns 17-20 ---
+      // Row 1 (1-based), columns 17 to 20 (inclusive)
+      final drillproperrange = sheet.getRangeByIndex(1, 17, 1, 49);
+drillproperrange.merge();
+      sheet.getRangeByIndex(1, 17, 1, 49).merge();
+      final drillProperCell = sheet.getRangeByIndex(1, 17);
+      drillProperCell.setText('ACTUAL DRILL');
+      drillProperCell.cellStyle = workbook.styles.add('actualdrillheader')
+        ..backColor = '#FFF2CC'
+        ..fontColor = '#000000'
+        ..bold = true
+        ..hAlign = xlsio.HAlignType.center
+        ..vAlign = xlsio.VAlignType.center
+        ..wrapText = true;
+  // Add border to the entire merged range
+drillproperrange.cellStyle.borders.all.lineStyle = xlsio.LineStyle.thin;
+drillproperrange.cellStyle.borders.all.color = '#000000'; // Optional: Border color
+         // --- Merge and set "drill proper" in the first row, columns 17-20 ---
+      // Row 1 (1-based), columns 17 to 20 (inclusive)
+      final postdrillrange = sheet.getRangeByIndex(1, 50, 1, 53);
+postdrillrange.merge();
+      sheet.getRangeByIndex(1, 50, 1, 53).merge();
+      final postdrillcell = sheet.getRangeByIndex(1, 50);
+      postdrillcell.setText('POST DRILL');
+      postdrillcell.cellStyle = workbook.styles.add('postdrillheader')
+        ..backColor = '#a7c957'
+        ..fontColor = '#000000'
+        ..bold = true
+        ..hAlign = xlsio.HAlignType.center
+        ..vAlign = xlsio.VAlignType.center
+        ..wrapText = true;
+// Add border to the entire merged range
+postdrillrange.cellStyle.borders.all.lineStyle = xlsio.LineStyle.thin;
+postdrillrange.cellStyle.borders.all.color = '#000000'; // Optional: Border color
+
+      final predrillrange = sheet.getRangeByIndex(1, 4, 1, 16);
+predrillrange.merge();
+
+// Apply styles to the merged cell
+final predrillcell = sheet.getRangeByIndex(1, 4);
+predrillcell.setText('PRE DRILL');
+predrillcell.cellStyle = workbook.styles.add('predrillheader')
+  ..backColor = '#f4cccc'
+  ..fontColor = '#000000'
+  ..bold = true
+  ..hAlign = xlsio.HAlignType.center
+  ..vAlign = xlsio.VAlignType.center
+  ..wrapText = true;
+
+// Add border to the entire merged range
+predrillrange.cellStyle.borders.all.lineStyle = xlsio.LineStyle.thin;
+predrillrange.cellStyle.borders.all.color = '#000000'; // Optional: Border color
 
       // --- Write data rows with plain white background ---
       for (int row = 4; row < excelRows.length; row++) {
@@ -1146,16 +1177,61 @@ class _AdminTasksManagerPageState extends State<AdminTasksManagerPage> {
             ..fontColor = '#000000'
             ..hAlign = xlsio.HAlignType.left
             ..vAlign = xlsio.VAlignType.center;
-          cell.cellStyle.borders.all.lineStyle = border;
-          cell.cellStyle.borders.all.color = '#000000';
+          // Set border color to white for signature rows
+          if (row >= excelRows.length - 4) {
+            cell.cellStyle.borders.all.lineStyle = border;
+            cell.cellStyle.borders.all.color = '#FFFFFF';
+          } else {
+            cell.cellStyle.borders.all.lineStyle = border;
+            cell.cellStyle.borders.all.color = '#000000';
+          }
         }
       }
+
+      // --- Add TOTAL row before signature rows ---
+      // Find the index to insert the total row (before the last 9 rows: 5 empty + 4 signature)
+      final int totalRowIndex = excelRows.length - 9;
+      final int colCount = excelRows[4].length;
+      List<dynamic> totalRow = List.generate(colCount, (i) {
+        if (i == 0) return '';
+        if (i == 1) return '';
+        if (i == 2) return 'TOTAL';
+        // Sum all numeric values in this column (skip header/prefix/yesno/signature rows)
+        num sum = 0;
+        for (int row = 4; row < totalRowIndex; row++) {
+          final val = excelRows[row][i];
+          if (val is num) {
+            sum += val;
+          } else if (val is String && num.tryParse(val) != null) {
+            sum += num.parse(val);
+          }
+        }
+        return sum == 0 ? '' : sum;
+      });
+     // Insert the total row into excelRows
+excelRows.insert(totalRowIndex, totalRow);
+
+// Write the TOTAL row to the sheet (columns 20 to 49)
+for (int col = 19; col < 49; col++) { // 0-based index: 19 = column 20
+  final cell = sheet.getRangeByIndex(totalRowIndex + 1, col + 1);
+  cell.setText(totalRow[col].toString());
+  cell.cellStyle = workbook.styles.add('totalRow$col')
+    ..backColor = '#d9ead3'
+    ..fontColor = '#000000'
+    ..bold = true
+    ..hAlign = xlsio.HAlignType.center
+    ..vAlign = xlsio.VAlignType.center;
+  cell.cellStyle.borders.all.lineStyle = border;
+  cell.cellStyle.borders.all.color = '#000000';
+}
 
       // --- Set column widths for better spacing ---
       // Set default width
       for (int col = 0; col < headerRow.length; col++) {
         sheet.setColumnWidthInPixels(col + 1, 140);
       }
+      sheet.autoFitColumn(3);
+
       // Set wider columns for summary columns and enable wrap text
       final summaryCols = <int>[
         personnelSummaryCol,
@@ -1180,6 +1256,15 @@ class _AdminTasksManagerPageState extends State<AdminTasksManagerPage> {
               cell.cellStyle.wrapText = true;
             }
           }
+        }
+      }
+
+
+      // --- Set the whole sheet to Bookman Old Style font ---
+      for (int row = 1; row <= sheet.getLastRow(); row++) {
+        for (int col = 1; col <= sheet.getLastColumn(); col++) {
+          final cell = sheet.getRangeByIndex(row, col);
+          cell.cellStyle.fontName = 'Bookman Old Style';
         }
       }
 
@@ -1517,6 +1602,7 @@ class _AdminTasksManagerPageState extends State<AdminTasksManagerPage> {
                           children: [
                             Checkbox(
                               value: _showArchived,
+                             
                               onChanged: (v) => setState(() => _showArchived = v ?? false),
                             ),
                             const Text('Show Archived'),

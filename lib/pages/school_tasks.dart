@@ -254,12 +254,13 @@ class _SchoolSubmitFormPageState extends State<SchoolSubmitFormPage> {
     'Learners have accomplished the Family Earthquake Preparedness Homework?': null,
     'Conducted alternative activities and/or Information, Education and Communication (IEC) campaigns on earthquake preparedness and fire prevention?': null,
   };
-  final TextEditingController additionalRemarks = TextEditingController();
+  final TextEditingController preDrillRemarks = TextEditingController();
 
   // Actual Drill
   bool? duckCoverHold;
   bool? conductedEvacuationDrill;
   final TextEditingController otherActivities = TextEditingController();
+  final TextEditingController actualDrillRemarks = TextEditingController();
 
   // Personnel/Participants
   // --- Total Population ---
@@ -295,6 +296,7 @@ class _SchoolSubmitFormPageState extends State<SchoolSubmitFormPage> {
   // Post-Drill
   bool? reviewedContingencyPlan;
   final TextEditingController issuesConcerns = TextEditingController();
+  final TextEditingController postDrillRemarks = TextEditingController();
 
   // New: Controller for external links
   final TextEditingController linksController = TextEditingController();
@@ -329,12 +331,13 @@ class _SchoolSubmitFormPageState extends State<SchoolSubmitFormPage> {
       for (final k in preDrill.keys) {
         preDrill[k] = pd[k];
       }
-      additionalRemarks.text = data['additionalRemarks'] ?? '';
+      preDrillRemarks.text = data['preDrillRemarks'] ?? '';
       // Actual Drill
       final actual = data['actualDrill'] ?? {};
       duckCoverHold = actual['duckCoverHold'];
       conductedEvacuationDrill = actual['conductedEvacuationDrill'];
       otherActivities.text = actual['otherActivities'] ?? '';
+      actualDrillRemarks.text = data['actualDrillRemarks'] ?? '';
       // Personnel
       final personnel = data['personnel'] ?? {};
       teachingPersonnelTotalMale.text = personnel['teachingTotalMale'] ?? '';
@@ -367,6 +370,7 @@ class _SchoolSubmitFormPageState extends State<SchoolSubmitFormPage> {
       final post = data['postDrill'] ?? {};
       reviewedContingencyPlan = post['reviewedContingencyPlan'];
       issuesConcerns.text = post['issuesConcerns'] ?? '';
+      postDrillRemarks.text = data['postDrillRemarks'] ?? '';
       // External Links
       final links = (data['externalLinks'] ?? []) as List<dynamic>;
       linksController.text = links.join('\n');
@@ -467,9 +471,9 @@ class _SchoolSubmitFormPageState extends State<SchoolSubmitFormPage> {
           )),
           const SizedBox(height: 14),
           TextField(
-            controller: additionalRemarks,
+            controller: preDrillRemarks,
             decoration: InputDecoration(
-              labelText: 'Additional Remarks',
+              labelText: 'Additional Remarks (Pre-Drill)',
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
               filled: true,
               fillColor: colorScheme.secondary.withOpacity(0.07),
@@ -541,6 +545,19 @@ class _SchoolSubmitFormPageState extends State<SchoolSubmitFormPage> {
               filled: true,
               fillColor: colorScheme.secondary.withOpacity(0.07),
               prefixIcon: const Icon(Icons.event_note_outlined),
+            ),
+            minLines: 1,
+            maxLines: 3,
+          ),
+          const SizedBox(height: 14),
+          TextField(
+            controller: actualDrillRemarks,
+            decoration: InputDecoration(
+              labelText: 'Additional Remarks (Actual Drill)',
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              filled: true,
+              fillColor: colorScheme.secondary.withOpacity(0.07),
+              prefixIcon: const Icon(Icons.note_alt_outlined),
             ),
             minLines: 1,
             maxLines: 3,
@@ -983,6 +1000,19 @@ class _SchoolSubmitFormPageState extends State<SchoolSubmitFormPage> {
             minLines: 2,
             maxLines: 4,
           ),
+          const SizedBox(height: 14),
+          TextField(
+            controller: postDrillRemarks,
+            decoration: InputDecoration(
+              labelText: 'Additional Remarks (Post-Drill)',
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              filled: true,
+              fillColor: colorScheme.secondary.withOpacity(0.07),
+              prefixIcon: const Icon(Icons.note_alt_outlined),
+            ),
+            minLines: 1,
+            maxLines: 3,
+          ),
         ];
       default:
         return [];
@@ -1007,7 +1037,10 @@ class _SchoolSubmitFormPageState extends State<SchoolSubmitFormPage> {
       'taskId': widget.taskId,
       'submittedAt': FieldValue.serverTimestamp(),
       'preDrill': preDrill,
-      'additionalRemarks': additionalRemarks.text,
+      'preDrillRemarks': preDrillRemarks.text,
+      'actualDrillRemarks': actualDrillRemarks.text,
+      'postDrillRemarks': postDrillRemarks.text,
+      // Remove: 'additionalRemarks': additionalRemarks.text,
       'actualDrill': {
         'duckCoverHold': duckCoverHold,
         'conductedEvacuationDrill': conductedEvacuationDrill,
