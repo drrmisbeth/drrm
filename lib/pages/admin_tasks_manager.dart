@@ -284,7 +284,7 @@ class _AdminTasksManagerPageState extends State<AdminTasksManagerPage> {
       postDrillFields.sort();
       remainingFields.sort();
 
-      // --- Build fields list and insert personnel summary section ---
+      // --- Build fields list and insert personnel and learners summary sections ---
       final List<String> fields = [
         ...orderedPreDrillFields,
         ...actualDrillFields,
@@ -292,12 +292,57 @@ class _AdminTasksManagerPageState extends State<AdminTasksManagerPage> {
         ...orderedLearnersFields,
         // Insert marker for personnel summary section
         '___personnel_summary___',
+        // Insert marker for participated personnel summary section
+        '___personnel_participated_summary___',
+        // Insert marker for learners summary section
+        '___learners_summary___',
+        // Insert marker for IP learners summary section
+        '___ip_learners_summary___',
+        // Insert marker for Muslim learners summary section
+        '___muslim_learners_summary___',
+        // Insert marker for learners participated summary section
+        '___learners_participated_summary___',
+        // Insert marker for IP learners participated summary section
+        '___ip_learners_participated_summary___',
+        // Insert marker for Muslim learners participated summary section
+        '___muslim_learners_participated_summary___',
+        // Insert marker for PWD learners summary section
+        '___pwd_learners_summary___',
+        // Insert marker for PWD learners participated summary section
+        '___pwd_learners_participated_summary___',
         ...postDrillFields,
         ...remainingFields,
       ];
 
       // --- Remove unwanted fields from the export ---
-      final unwanted = {'schoolId', 'schooluid', 'submittedAt', 'taskId', 'learners.total', 'learners.participatedTotal', 'learners.participatedMale'};
+      final unwanted = {
+        'schoolId', 'schooluid', 'submittedAt', 'taskId',
+        'learners.total', 'learners.participatedTotal', 'learners.participatedMale',
+        // Hide these columns:
+        'personnel.teachingTotalMale',
+        'personnel.teachingTotalFemale',
+        'personnel.nonTeachingTotalMale',
+        'personnel.nonTeachingTotalFemale',
+        'personnel.teachingParticipatedMale',
+        'personnel.teachingParticipatedFemale',
+        'personnel.nonTeachingParticipatedMale',
+        'personnel.nonTeachingParticipatedFemale',
+        'learners.totalMale',
+        'learners.totalFemale',
+        'learners.ipTotalMale',
+        'learners.ipTotalFemale',
+        'learners.muslimTotalMale',
+        'learners.pwdTotalMale',
+        'learners.pwdTotalFemale',
+        'learners.participatedFemale',
+        'learners.ipParticipatedMale',
+        'learners.ipParticipatedFemale',
+        'learners.muslimParticipatedMale',
+        'learners.muslimParticipatedFemale',
+        'learners.pwdParticipatedMale',
+        'learners.pwdParticipatedFemale',
+        'learners.muslimTotalFemale',
+      };
       List<String> filteredFields = fields.where((f) {
         final key = fieldKeyToHeader[f] ?? f;
         final last = key;
@@ -309,15 +354,23 @@ class _AdminTasksManagerPageState extends State<AdminTasksManagerPage> {
       List<String> headerRow = ['No.', 'schoolID', 'School Names'];
       List<String> yesNoRow = ['','',''];
 
-      // Track where to insert the personnel and learners summary sections
+      // Track where to insert the summary sections
       int personnelSummaryCol = -1;
+      int personnelParticipatedSummaryCol = -1;
       int learnersSummaryCol = -1;
+      int ipLearnersSummaryCol = -1;
+      int learnersParticipatedSummaryCol = -1;
+      int ipLearnersParticipatedSummaryCol = -1;
+      int muslimLearnersSummaryCol = -1;
+      int muslimLearnersParticipatedSummaryCol = -1;
+      int pwdLearnersSummaryCol = -1;
+      int pwdLearnersParticipatedSummaryCol = -1;
 
       int i = 0;
       while (i < filteredFields.length) {
         final f = filteredFields[i];
+        // --- Insert merged header for personnel summary ---
         if (f == '___personnel_summary___') {
-          // Insert merged header for personnel summary
           personnelSummaryCol = prefixRow.length;
           prefixRow.add('Total No. of Teaching and Non-Teaching Personnel');
           prefixRow.add('');
@@ -331,8 +384,23 @@ class _AdminTasksManagerPageState extends State<AdminTasksManagerPage> {
           i++;
           continue;
         }
-        // --- Insert merged header for learners summary after learners fields ---
-        if (f == 'learners.totalMale') {
+        // --- Insert merged header for participated personnel summary ---
+        if (f == '___personnel_participated_summary___') {
+          personnelParticipatedSummaryCol = prefixRow.length;
+          prefixRow.add('Total No. of Teaching and Non-Teaching Participated Personnel');
+          prefixRow.add('');
+          prefixRow.add('');
+          headerRow.add('Male');
+          headerRow.add('Female');
+          headerRow.add('Total');
+          yesNoRow.add('');
+          yesNoRow.add('');
+          yesNoRow.add('');
+          i++;
+          continue;
+        }
+        // --- Insert merged header for learners summary ---
+        if (f == '___learners_summary___') {
           learnersSummaryCol = prefixRow.length;
           prefixRow.add('Total No. of Learners');
           prefixRow.add('');
@@ -343,8 +411,112 @@ class _AdminTasksManagerPageState extends State<AdminTasksManagerPage> {
           yesNoRow.add('');
           yesNoRow.add('');
           yesNoRow.add('');
-          // Skip the next two fields (learners.totalFemale, learners.total)
-          i += 3;
+          i++;
+          continue;
+        }
+        // --- Insert merged header for IP learners summary ---
+        if (f == '___ip_learners_summary___') {
+          ipLearnersSummaryCol = prefixRow.length;
+          prefixRow.add('Total No. of IP Learners');
+          prefixRow.add('');
+          prefixRow.add('');
+          headerRow.add('Male');
+          headerRow.add('Female');
+          headerRow.add('Total');
+          yesNoRow.add('');
+          yesNoRow.add('');
+          yesNoRow.add('');
+          i++;
+          continue;
+        }
+        // --- Insert merged header for Muslim learners summary ---
+        if (f == '___muslim_learners_summary___') {
+          muslimLearnersSummaryCol = prefixRow.length;
+          prefixRow.add('Total No. of Muslim Learners');
+          prefixRow.add('');
+          prefixRow.add('');
+          headerRow.add('Male');
+          headerRow.add('Female');
+          headerRow.add('Total');
+          yesNoRow.add('');
+          yesNoRow.add('');
+          yesNoRow.add('');
+          i++;
+          continue;
+        }
+        // --- Insert merged header for learners participated summary ---
+        if (f == '___learners_participated_summary___') {
+          learnersParticipatedSummaryCol = prefixRow.length;
+          prefixRow.add('Total No. of Learners Participated');
+          prefixRow.add('');
+          prefixRow.add('');
+          headerRow.add('Male');
+          headerRow.add('Female');
+          headerRow.add('Total');
+          yesNoRow.add('');
+          yesNoRow.add('');
+          yesNoRow.add('');
+          i++;
+          continue;
+        }
+        // --- Insert merged header for IP learners participated summary ---
+        if (f == '___ip_learners_participated_summary___') {
+          ipLearnersParticipatedSummaryCol = prefixRow.length;
+          prefixRow.add('Total No. of IP Learners Participated');
+          prefixRow.add('');
+          prefixRow.add('');
+          headerRow.add('Male');
+          headerRow.add('Female');
+          headerRow.add('Total');
+          yesNoRow.add('');
+          yesNoRow.add('');
+          yesNoRow.add('');
+          i++;
+          continue;
+        }
+        // --- Insert merged header for Muslim learners participated summary ---
+        if (f == '___muslim_learners_participated_summary___') {
+          muslimLearnersParticipatedSummaryCol = prefixRow.length;
+          prefixRow.add('Total No. of Muslim Learners Participated');
+          prefixRow.add('');
+          prefixRow.add('');
+          headerRow.add('Male');
+          headerRow.add('Female');
+          headerRow.add('Total');
+          yesNoRow.add('');
+          yesNoRow.add('');
+          yesNoRow.add('');
+          i++;
+          continue;
+        }
+        // --- Insert merged header for PWD learners summary ---
+        if (f == '___pwd_learners_summary___') {
+          pwdLearnersSummaryCol = prefixRow.length;
+          prefixRow.add('Total No. of PWD Learners');
+          prefixRow.add('');
+          prefixRow.add('');
+          headerRow.add('Male');
+          headerRow.add('Female');
+          headerRow.add('Total');
+          yesNoRow.add('');
+          yesNoRow.add('');
+          yesNoRow.add('');
+          i++;
+          continue;
+        }
+        // --- Insert merged header for PWD learners participated summary ---
+        if (f == '___pwd_learners_participated_summary___') {
+          pwdLearnersParticipatedSummaryCol = prefixRow.length;
+          prefixRow.add('Total No. of PWD Learners Participated');
+          prefixRow.add('');
+          prefixRow.add('');
+          headerRow.add('Male');
+          headerRow.add('Female');
+          headerRow.add('Total');
+          yesNoRow.add('');
+          yesNoRow.add('');
+          yesNoRow.add('');
+          i++;
           continue;
         }
         final prefix = fieldKeyToPrefix[f] ?? '';
@@ -367,6 +539,8 @@ class _AdminTasksManagerPageState extends State<AdminTasksManagerPage> {
 
       // --- 5. Prepare Excel rows for all schools ---
       List<List<dynamic>> excelRows = [];
+      // Add extra empty row at the top
+      excelRows.add([]);
       excelRows.add(prefixRow);
       excelRows.add(headerRow);
       excelRows.add(yesNoRow); // Insert Yes/No row here
@@ -467,14 +641,80 @@ class _AdminTasksManagerPageState extends State<AdminTasksManagerPage> {
         flat['learners.muslimParticipatedTotal'] = muslimParticipatedMale + muslimParticipatedFemale;
         flat['learners.pwdParticipatedTotal'] = pwdParticipatedMale + pwdParticipatedFemale;
 
-        // Build row data, inserting personnel summary at correct position
+        // Build row data, inserting summary sections at correct positions
         List<dynamic> row = [rowNum++, schoolID, schoolName];
         int colIdx = 3;
         for (final f in filteredFields) {
           if (f == '___personnel_summary___') {
-            row.add(totalMale);
-            row.add(totalFemale);
-            row.add(totalMale + totalFemale);
+            // Show blank if value is 0
+            row.add(totalMale == 0 ? '' : totalMale);
+            row.add(totalFemale == 0 ? '' : totalFemale);
+            row.add((totalMale + totalFemale) == 0 ? '' : (totalMale + totalFemale));
+            colIdx += 3;
+            continue;
+          }
+          if (f == '___personnel_participated_summary___') {
+            final partMale = teachingPartMale + nonTeachingPartMale;
+            final partFemale = teachingPartFemale + nonTeachingPartFemale;
+            row.add(partMale == 0 ? '' : partMale);
+            row.add(partFemale == 0 ? '' : partFemale);
+            row.add((partMale + partFemale) == 0 ? '' : (partMale + partFemale));
+            colIdx += 3;
+            continue;
+          }
+          if (f == '___learners_summary___') {
+            row.add(learnersTotalMale == 0 ? '' : learnersTotalMale);
+            row.add(learnersTotalFemale == 0 ? '' : learnersTotalFemale);
+            row.add((learnersTotalMale + learnersTotalFemale) == 0 ? '' : (learnersTotalMale + learnersTotalFemale));
+            colIdx += 3;
+            continue;
+          }
+          if (f == '___ip_learners_summary___') {
+            row.add(ipTotalMale == 0 ? '' : ipTotalMale);
+            row.add(ipTotalFemale == 0 ? '' : ipTotalFemale);
+            row.add((ipTotalMale + ipTotalFemale) == 0 ? '' : (ipTotalMale + ipTotalFemale));
+            colIdx += 3;
+            continue;
+          }
+          if (f == '___muslim_learners_summary___') {
+            row.add(muslimTotalMale == 0 ? '' : muslimTotalMale);
+            row.add(muslimTotalFemale == 0 ? '' : muslimTotalFemale);
+            row.add((muslimTotalMale + muslimTotalFemale) == 0 ? '' : (muslimTotalMale + muslimTotalFemale));
+            colIdx += 3;
+            continue;
+          }
+          if (f == '___learners_participated_summary___') {
+            row.add(learnersParticipatedMale == 0 ? '' : learnersParticipatedMale);
+            row.add(learnersParticipatedFemale == 0 ? '' : learnersParticipatedFemale);
+            row.add((learnersParticipatedMale + learnersParticipatedFemale) == 0 ? '' : (learnersParticipatedMale + learnersParticipatedFemale));
+            colIdx += 3;
+            continue;
+          }
+          if (f == '___ip_learners_participated_summary___') {
+            row.add(ipParticipatedMale == 0 ? '' : ipParticipatedMale);
+            row.add(ipParticipatedFemale == 0 ? '' : ipParticipatedFemale);
+            row.add((ipParticipatedMale + ipParticipatedFemale) == 0 ? '' : (ipParticipatedMale + ipParticipatedFemale));
+            colIdx += 3;
+            continue;
+          }
+          if (f == '___muslim_learners_participated_summary___') {
+            row.add(muslimParticipatedMale == 0 ? '' : muslimParticipatedMale);
+            row.add(muslimParticipatedFemale == 0 ? '' : muslimParticipatedFemale);
+            row.add((muslimParticipatedMale + muslimParticipatedFemale) == 0 ? '' : (muslimParticipatedMale + muslimParticipatedFemale));
+            colIdx += 3;
+            continue;
+          }
+          if (f == '___pwd_learners_summary___') {
+            row.add(pwdTotalMale == 0 ? '' : pwdTotalMale);
+            row.add(pwdTotalFemale == 0 ? '' : pwdTotalFemale);
+            row.add((pwdTotalMale + pwdTotalFemale) == 0 ? '' : (pwdTotalMale + pwdTotalFemale));
+            colIdx += 3;
+            continue;
+          }
+          if (f == '___pwd_learners_participated_summary___') {
+            row.add(pwdParticipatedMale == 0 ? '' : pwdParticipatedMale);
+            row.add(pwdParticipatedFemale == 0 ? '' : pwdParticipatedFemale);
+            row.add((pwdParticipatedMale + pwdParticipatedFemale) == 0 ? '' : (pwdParticipatedMale + pwdParticipatedFemale));
             colIdx += 3;
             continue;
           }
@@ -573,18 +813,31 @@ class _AdminTasksManagerPageState extends State<AdminTasksManagerPage> {
       }
 
       // --- Write prefix row ---
+      // Adjusted row indices due to extra empty row at the top
       for (int col = 0; col < prefixRow.length; col++) {
-        final cell = sheet.getRangeByIndex(1, col + 1);
+        final cell = sheet.getRangeByIndex(2, col + 1);
         cell.setText(prefixRow[col].toString());
         // Color by section
         final field = col >= 3 && col - 3 < filteredFields.length ? filteredFields[col - 3] : '';
-        // Merge and wrap for personnel summary
+        // Merge and style for summary sections
         if (personnelSummaryCol != -1 && col == personnelSummaryCol) {
           // Merge the 3 columns for the personnel summary header
-          sheet.getRangeByIndex(1, col + 1, 1, col + 3).merge();
-          sheet.getRangeByIndex(1, col + 2).setText('');
-          sheet.getRangeByIndex(1, col + 3).setText('');
+          sheet.getRangeByIndex(2, col + 1, 1, col + 3).merge();
+          sheet.getRangeByIndex(2, col + 2).setText('');
+          sheet.getRangeByIndex(2, col + 3).setText('');
           cell.cellStyle = workbook.styles.add('personnelSummaryHeader')
+            ..backColor = '#FFF2CC'
+            ..fontColor = '#000000'
+            ..bold = true
+            ..hAlign = xlsio.HAlignType.center
+            ..vAlign = xlsio.VAlignType.center
+            ..wrapText = true;
+        } else if (personnelParticipatedSummaryCol != -1 && col == personnelParticipatedSummaryCol) {
+          // Merge the 3 columns for the participated personnel summary header
+          sheet.getRangeByIndex(2, col + 1, 1, col + 3).merge();
+          sheet.getRangeByIndex(2, col + 2).setText('');
+          sheet.getRangeByIndex(2, col + 3).setText('');
+          cell.cellStyle = workbook.styles.add('personnelParticipatedSummaryHeader')
             ..backColor = '#FFF2CC'
             ..fontColor = '#000000'
             ..bold = true
@@ -593,11 +846,95 @@ class _AdminTasksManagerPageState extends State<AdminTasksManagerPage> {
             ..wrapText = true;
         } else if (learnersSummaryCol != -1 && col == learnersSummaryCol) {
           // Merge the 3 columns for the learners summary header
-          sheet.getRangeByIndex(1, col + 1, 1, col + 3).merge();
-          sheet.getRangeByIndex(1, col + 2).setText('');
-          sheet.getRangeByIndex(1, col + 3).setText('');
+          sheet.getRangeByIndex(2, col + 1, 1, col + 3).merge();
+          sheet.getRangeByIndex(2, col + 2).setText('');
+          sheet.getRangeByIndex(2, col + 3).setText('');
           cell.cellStyle = workbook.styles.add('learnersSummaryHeader')
-            ..backColor = '#FFF2CC'
+            ..backColor = '#CFE2F3'
+            ..fontColor = '#000000'
+            ..bold = true
+            ..hAlign = xlsio.HAlignType.center
+            ..vAlign = xlsio.VAlignType.center
+            ..wrapText = true;
+        } else if (ipLearnersSummaryCol != -1 && col == ipLearnersSummaryCol) {
+          // Merge the 3 columns for the IP learners summary header
+          sheet.getRangeByIndex(2, col + 1, 1, col + 3).merge();
+          sheet.getRangeByIndex(2, col + 2).setText('');
+          sheet.getRangeByIndex(2, col + 3).setText('');
+          cell.cellStyle = workbook.styles.add('ipLearnersSummaryHeader')
+            ..backColor = '#CFE2F3'
+            ..fontColor = '#000000'
+            ..bold = true
+            ..hAlign = xlsio.HAlignType.center
+            ..vAlign = xlsio.VAlignType.center
+            ..wrapText = true;
+        } else if (muslimLearnersSummaryCol != -1 && col == muslimLearnersSummaryCol) {
+          // Merge the 3 columns for the Muslim learners summary header
+          sheet.getRangeByIndex(2, col + 1, 1, col + 3).merge();
+          sheet.getRangeByIndex(2, col + 2).setText('');
+          sheet.getRangeByIndex(2, col + 3).setText('');
+          cell.cellStyle = workbook.styles.add('muslimLearnersSummaryHeader')
+            ..backColor = '#CFE2F3'
+            ..fontColor = '#000000'
+            ..bold = true
+            ..hAlign = xlsio.HAlignType.center
+            ..vAlign = xlsio.VAlignType.center
+            ..wrapText = true;
+        } else if (learnersParticipatedSummaryCol != -1 && col == learnersParticipatedSummaryCol) {
+          // Merge the 3 columns for the learners participated summary header
+          sheet.getRangeByIndex(2, col + 1, 1, col + 3).merge();
+          sheet.getRangeByIndex(2, col + 2).setText('');
+          sheet.getRangeByIndex(2, col + 3).setText('');
+          cell.cellStyle = workbook.styles.add('learnersParticipatedSummaryHeader')
+            ..backColor = '#CFE2F3'
+            ..fontColor = '#000000'
+            ..bold = true
+            ..hAlign = xlsio.HAlignType.center
+            ..vAlign = xlsio.VAlignType.center
+            ..wrapText = true;
+        } else if (ipLearnersParticipatedSummaryCol != -1 && col == ipLearnersParticipatedSummaryCol) {
+          // Merge the 3 columns for the IP learners participated summary header
+          sheet.getRangeByIndex(2, col + 1, 1, col + 3).merge();
+          sheet.getRangeByIndex(2, col + 2).setText('');
+          sheet.getRangeByIndex(2, col + 3).setText('');
+          cell.cellStyle = workbook.styles.add('ipLearnersParticipatedSummaryHeader')
+            ..backColor = '#CFE2F3'
+            ..fontColor = '#000000'
+            ..bold = true
+            ..hAlign = xlsio.HAlignType.center
+            ..vAlign = xlsio.VAlignType.center
+            ..wrapText = true;
+        } else if (muslimLearnersParticipatedSummaryCol != -1 && col == muslimLearnersParticipatedSummaryCol) {
+          // Merge the 3 columns for the Muslim learners participated summary header
+          sheet.getRangeByIndex(2, col + 1, 1, col + 3).merge();
+          sheet.getRangeByIndex(2, col + 2).setText('');
+          sheet.getRangeByIndex(2, col + 3).setText('');
+          cell.cellStyle = workbook.styles.add('muslimLearnersParticipatedSummaryHeader')
+            ..backColor = '#CFE2F3'
+            ..fontColor = '#000000'
+            ..bold = true
+            ..hAlign = xlsio.HAlignType.center
+            ..vAlign = xlsio.VAlignType.center
+            ..wrapText = true;
+        } else if (pwdLearnersSummaryCol != -1 && col == pwdLearnersSummaryCol) {
+          // Merge the 3 columns for the PWD learners summary header
+          sheet.getRangeByIndex(2, col + 1, 1, col + 3).merge();
+          sheet.getRangeByIndex(2, col + 2).setText('');
+          sheet.getRangeByIndex(2, col + 3).setText('');
+          cell.cellStyle = workbook.styles.add('pwdLearnersSummaryHeader')
+            ..backColor = '#CFE2F3'
+            ..fontColor = '#000000'
+            ..bold = true
+            ..hAlign = xlsio.HAlignType.center
+            ..vAlign = xlsio.VAlignType.center
+            ..wrapText = true;
+        } else if (pwdLearnersParticipatedSummaryCol != -1 && col == pwdLearnersParticipatedSummaryCol) {
+          // Merge the 3 columns for the PWD learners participated summary header
+          sheet.getRangeByIndex(2, col + 1, 1, col + 3).merge();
+          sheet.getRangeByIndex(2, col + 2).setText('');
+          sheet.getRangeByIndex(2, col + 3).setText('');
+          cell.cellStyle = workbook.styles.add('pwdLearnersParticipatedSummaryHeader')
+            ..backColor = '#CFE2F3'
             ..fontColor = '#000000'
             ..bold = true
             ..hAlign = xlsio.HAlignType.center
@@ -605,7 +942,15 @@ class _AdminTasksManagerPageState extends State<AdminTasksManagerPage> {
             ..wrapText = true;
         } else if (
           (personnelSummaryCol != -1 && (col == personnelSummaryCol + 1 || col == personnelSummaryCol + 2)) ||
-          (learnersSummaryCol != -1 && (col == learnersSummaryCol + 1 || col == learnersSummaryCol + 2))
+          (personnelParticipatedSummaryCol != -1 && (col == personnelParticipatedSummaryCol + 1 || col == personnelParticipatedSummaryCol + 2)) ||
+          (learnersSummaryCol != -1 && (col == learnersSummaryCol + 1 || col == learnersSummaryCol + 2)) ||
+          (ipLearnersSummaryCol != -1 && (col == ipLearnersSummaryCol + 1 || col == ipLearnersSummaryCol + 2)) ||
+          (muslimLearnersSummaryCol != -1 && (col == muslimLearnersSummaryCol + 1 || col == muslimLearnersSummaryCol + 2)) ||
+          (learnersParticipatedSummaryCol != -1 && (col == learnersParticipatedSummaryCol + 1 || col == learnersParticipatedSummaryCol + 2)) ||
+          (ipLearnersParticipatedSummaryCol != -1 && (col == ipLearnersParticipatedSummaryCol + 1 || col == ipLearnersParticipatedSummaryCol + 2)) ||
+          (muslimLearnersParticipatedSummaryCol != -1 && (col == muslimLearnersParticipatedSummaryCol + 1 || col == muslimLearnersParticipatedSummaryCol + 2)) ||
+          (pwdLearnersSummaryCol != -1 && (col == pwdLearnersSummaryCol + 1 || col == pwdLearnersSummaryCol + 2)) ||
+          (pwdLearnersParticipatedSummaryCol != -1 && (col == pwdLearnersParticipatedSummaryCol + 1 || col == pwdLearnersParticipatedSummaryCol + 2))
         ) {
           // These cells are merged, skip styling/text
           continue;
@@ -632,11 +977,11 @@ class _AdminTasksManagerPageState extends State<AdminTasksManagerPage> {
       }
       // Merge "preDrill" prefix cell if present
       if (preDrillStartCol != -1 && preDrillColSpan > 1) {
-        sheet.getRangeByIndex(1, preDrillStartCol + 1, 1, preDrillColSpan).merge();
+        sheet.getRangeByIndex(2, preDrillStartCol + 1, 2, preDrillColSpan).merge();
       }
       // --- Write header row ---
       for (int col = 0; col < headerRow.length; col++) {
-        final cell = sheet.getRangeByIndex(2, col + 1);
+        final cell = sheet.getRangeByIndex(3, col + 1);
         cell.setText(headerRow[col].toString());
         // Special: Style personnel summary columns
         if (personnelSummaryCol != -1 && col >= personnelSummaryCol && col < personnelSummaryCol + 3) {
@@ -647,8 +992,79 @@ class _AdminTasksManagerPageState extends State<AdminTasksManagerPage> {
             ..hAlign = xlsio.HAlignType.center
             ..vAlign = xlsio.VAlignType.center
             ..wrapText = true;
-        } else {
-          // ...existing style logic...
+        } else if (personnelParticipatedSummaryCol != -1 && col >= personnelParticipatedSummaryCol && col < personnelParticipatedSummaryCol + 3) {
+          cell.cellStyle = workbook.styles.add('personnelParticipatedSummarySubHeader$col')
+            ..backColor = '#FFF2CC'
+            ..fontColor = '#000000'
+            ..bold = true
+            ..hAlign = xlsio.HAlignType.center
+            ..vAlign = xlsio.VAlignType.center
+            ..wrapText = true;
+        } else if (learnersSummaryCol != -1 && col >= learnersSummaryCol && col < learnersSummaryCol + 3) {
+          cell.cellStyle = workbook.styles.add('learnersSummarySubHeader$col')
+            ..backColor = '#CFE2F3'
+            ..fontColor = '#000000'
+            ..bold = true
+            ..hAlign = xlsio.HAlignType.center
+            ..vAlign = xlsio.VAlignType.center
+            ..wrapText = true;
+        } else if (ipLearnersSummaryCol != -1 && col >= ipLearnersSummaryCol && col < ipLearnersSummaryCol + 3) {
+          cell.cellStyle = workbook.styles.add('ipLearnersSummarySubHeader$col')
+            ..backColor = '#CFE2F3'
+            ..fontColor = '#000000'
+            ..bold = true
+            ..hAlign = xlsio.HAlignType.center
+            ..vAlign = xlsio.VAlignType.center
+            ..wrapText = true;
+        } else if (muslimLearnersSummaryCol != -1 && col >= muslimLearnersSummaryCol && col < muslimLearnersSummaryCol + 3) {
+          cell.cellStyle = workbook.styles.add('muslimLearnersSummarySubHeader$col')
+            ..backColor = '#CFE2F3'
+            ..fontColor = '#000000'
+            ..bold = true
+            ..hAlign = xlsio.HAlignType.center
+            ..vAlign = xlsio.VAlignType.center
+            ..wrapText = true;
+        } else if (learnersParticipatedSummaryCol != -1 && col >= learnersParticipatedSummaryCol && col < learnersParticipatedSummaryCol + 3) {
+          cell.cellStyle = workbook.styles.add('learnersParticipatedSummarySubHeader$col')
+            ..backColor = '#CFE2F3'
+            ..fontColor = '#000000'
+            ..bold = true
+            ..hAlign = xlsio.HAlignType.center
+            ..vAlign = xlsio.VAlignType.center
+            ..wrapText = true;
+        } else if (ipLearnersParticipatedSummaryCol != -1 && col >= ipLearnersParticipatedSummaryCol && col < ipLearnersParticipatedSummaryCol + 3) {
+          cell.cellStyle = workbook.styles.add('ipLearnersParticipatedSummarySubHeader$col')
+            ..backColor = '#CFE2F3'
+            ..fontColor = '#000000'
+            ..bold = true
+            ..hAlign = xlsio.HAlignType.center
+            ..vAlign = xlsio.VAlignType.center
+            ..wrapText = true;
+        } else if (muslimLearnersParticipatedSummaryCol != -1 && col >= muslimLearnersParticipatedSummaryCol && col < muslimLearnersParticipatedSummaryCol + 3) {
+          // Add blue background for "Total No. of Muslim Learners Participated" columns
+          cell.cellStyle = workbook.styles.add('muslimLearnersParticipatedSummarySubHeader$col')
+            ..backColor = '#CFE2F3'
+            ..fontColor = '#000000'
+            ..bold = true
+            ..hAlign = xlsio.HAlignType.center
+            ..vAlign = xlsio.VAlignType.center
+            ..wrapText = true;
+        } else if (pwdLearnersSummaryCol != -1 && col >= pwdLearnersSummaryCol && col < pwdLearnersSummaryCol + 3) {
+          cell.cellStyle = workbook.styles.add('pwdLearnersSummarySubHeader$col')
+            ..backColor = '#CFE2F3'
+            ..fontColor = '#000000'
+            ..bold = true
+            ..hAlign = xlsio.HAlignType.center
+            ..vAlign = xlsio.VAlignType.center
+            ..wrapText = true;
+        } else if (pwdLearnersParticipatedSummaryCol != -1 && col >= pwdLearnersParticipatedSummaryCol && col < pwdLearnersParticipatedSummaryCol + 3) {
+          cell.cellStyle = workbook.styles.add('pwdLearnersParticipatedSummarySubHeader$col')
+            ..backColor = '#CFE2F3'
+            ..fontColor = '#000000'
+            ..bold = true
+            ..hAlign = xlsio.HAlignType.center
+            ..vAlign = xlsio.VAlignType.center
+            ..wrapText = true;
         }
         cell.cellStyle.borders.all.lineStyle = border;
         cell.cellStyle.borders.all.color = '#000000';
@@ -656,12 +1072,60 @@ class _AdminTasksManagerPageState extends State<AdminTasksManagerPage> {
 
       // --- Write Yes/No row ---
       for (int col = 0; col < yesNoRow.length; col++) {
-        final cell = sheet.getRangeByIndex(3, col + 1);
+        final cell = sheet.getRangeByIndex(4, col + 1);
         cell.setText(yesNoRow[col].toString());
         // Special: Style personnel summary columns
         if (personnelSummaryCol != -1 && col >= personnelSummaryCol && col < personnelSummaryCol + 3) {
           cell.cellStyle = workbook.styles.add('personnelSummaryYesNo$col')
             ..backColor = '#FFF2CC'
+            ..fontColor = '#000000'
+            ..hAlign = xlsio.HAlignType.center
+            ..vAlign = xlsio.VAlignType.center;
+        } else if (personnelParticipatedSummaryCol != -1 && col >= personnelParticipatedSummaryCol && col < personnelParticipatedSummaryCol + 3) {
+          cell.cellStyle = workbook.styles.add('personnelParticipatedSummaryYesNo$col')
+            ..backColor = '#FFF2CC'
+            ..fontColor = '#000000'
+            ..hAlign = xlsio.HAlignType.center
+            ..vAlign = xlsio.VAlignType.center;
+        } else if (learnersSummaryCol != -1 && col >= learnersSummaryCol && col < learnersSummaryCol + 3) {
+          cell.cellStyle = workbook.styles.add('learnersSummaryYesNo$col')
+            ..backColor = '#CFE2F3'
+            ..fontColor = '#000000'
+            ..hAlign = xlsio.HAlignType.center
+            ..vAlign = xlsio.VAlignType.center;
+        } else if (ipLearnersSummaryCol != -1 && col >= ipLearnersSummaryCol && col < ipLearnersSummaryCol + 3) {
+          cell.cellStyle = workbook.styles.add('ipLearnersSummaryYesNo$col')
+            ..backColor = '#CFE2F3'
+            ..fontColor = '#000000'
+            ..hAlign = xlsio.HAlignType.center
+            ..vAlign = xlsio.VAlignType.center;
+        } else if (muslimLearnersSummaryCol != -1 && col >= muslimLearnersSummaryCol && col < muslimLearnersSummaryCol + 3) {
+          cell.cellStyle = workbook.styles.add('muslimLearnersSummaryYesNo$col')
+            ..backColor = '#CFE2F3'
+            ..fontColor = '#000000'
+            ..hAlign = xlsio.HAlignType.center
+            ..vAlign = xlsio.VAlignType.center;
+        } else if (learnersParticipatedSummaryCol != -1 && col >= learnersParticipatedSummaryCol && col < learnersParticipatedSummaryCol + 3) {
+          cell.cellStyle = workbook.styles.add('learnersParticipatedSummaryYesNo$col')
+            ..backColor = '#CFE2F3'
+            ..fontColor = '#000000'
+            ..hAlign = xlsio.HAlignType.center
+            ..vAlign = xlsio.VAlignType.center;
+        } else if (ipLearnersParticipatedSummaryCol != -1 && col >= ipLearnersParticipatedSummaryCol && col < ipLearnersParticipatedSummaryCol + 3) {
+          cell.cellStyle = workbook.styles.add('ipLearnersParticipatedSummaryYesNo$col')
+            ..backColor = '#CFE2F3'
+            ..fontColor = '#000000'
+            ..hAlign = xlsio.HAlignType.center
+            ..vAlign = xlsio.VAlignType.center;
+        } else if (pwdLearnersSummaryCol != -1 && col >= pwdLearnersSummaryCol && col < pwdLearnersSummaryCol + 3) {
+          cell.cellStyle = workbook.styles.add('pwdLearnersSummaryYesNo$col')
+            ..backColor = '#CFE2F3'
+            ..fontColor = '#000000'
+            ..hAlign = xlsio.HAlignType.center
+            ..vAlign = xlsio.VAlignType.center;
+        } else if (pwdLearnersParticipatedSummaryCol != -1 && col >= pwdLearnersParticipatedSummaryCol && col < pwdLearnersParticipatedSummaryCol + 3) {
+          cell.cellStyle = workbook.styles.add('pwdLearnersParticipatedSummaryYesNo$col')
+            ..backColor = '#CFE2F3'
             ..fontColor = '#000000'
             ..hAlign = xlsio.HAlignType.center
             ..vAlign = xlsio.VAlignType.center;
@@ -673,7 +1137,7 @@ class _AdminTasksManagerPageState extends State<AdminTasksManagerPage> {
       }
 
       // --- Write data rows with plain white background ---
-      for (int row = 3; row < excelRows.length; row++) {
+      for (int row = 4; row < excelRows.length; row++) {
         for (int col = 0; col < excelRows[row].length; col++) {
           final cell = sheet.getRangeByIndex(row + 1, col + 1);
           cell.setText(excelRows[row][col].toString());
@@ -686,10 +1150,39 @@ class _AdminTasksManagerPageState extends State<AdminTasksManagerPage> {
           cell.cellStyle.borders.all.color = '#000000';
         }
       }
+
       // --- Set column widths for better spacing ---
+      // Set default width
       for (int col = 0; col < headerRow.length; col++) {
         sheet.setColumnWidthInPixels(col + 1, 140);
       }
+      // Set wider columns for summary columns and enable wrap text
+      final summaryCols = <int>[
+        personnelSummaryCol,
+        personnelParticipatedSummaryCol,
+        learnersSummaryCol,
+        ipLearnersSummaryCol,
+        muslimLearnersSummaryCol,
+        learnersParticipatedSummaryCol,
+        ipLearnersParticipatedSummaryCol,
+        muslimLearnersParticipatedSummaryCol,
+        pwdLearnersSummaryCol,
+        pwdLearnersParticipatedSummaryCol,
+      ];
+      for (final col in summaryCols) {
+        if (col != -1) {
+          // Set all 3 columns (header + 2 subcolumns) to be narrower and wrap text
+          for (int i = 0; i < 3; i++) {
+            sheet.setColumnWidthInPixels(col + 1 + i, 80); // changed from 220 to 110
+            // Enable wrap text for header, prefix, and yes/no rows
+            for (int row = 2; row <= 4; row++) {
+              final cell = sheet.getRangeByIndex(row, col + 1 + i);
+              cell.cellStyle.wrapText = true;
+            }
+          }
+        }
+      }
+
       final List<int> excelBytes = workbook.saveAsStream();
       workbook.dispose();
       await FileSaver.instance.saveFile(
@@ -1063,7 +1556,7 @@ class _AdminTasksManagerPageState extends State<AdminTasksManagerPage> {
                         docs = docs.where((doc) {
                           final task = doc.data() as Map<String, dynamic>;
                           final deadline = (task['deadline'] as Timestamp?)?.toDate();
-                          return deadline != null && deadline.year.toString() == _filterYear;
+                                                   return deadline != null && deadline.year.toString() == _filterYear;
                         }).toList();
                       }
                       if (_filterActive != null) {
@@ -1407,6 +1900,7 @@ class _AdminTasksManagerPageState extends State<AdminTasksManagerPage> {
     );
   }
 
+  
   String _formatDate(DateTime date) {
     const months = [
       '', 'January', 'February', 'March', 'April', 'May', 'June',
