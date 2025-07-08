@@ -581,3 +581,8 @@ class AdminSubmissionDetailPage extends StatelessWidget {
     return "${months[date.month]} ${date.day}, ${date.year}";
   }
 }
+
+// Helper function to count submissions for a specific taskId
+int countSubmissionsForTask(List<QueryDocumentSnapshot> submissions, String taskId) {
+  return submissions.where((s) => s['taskId'] == taskId).length;
+}

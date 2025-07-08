@@ -287,7 +287,9 @@ class _AdminTasksManagerPageState extends State<AdminTasksManagerPage> {
       // --- Build fields list and insert personnel and learners summary sections ---
       final List<String> fields = [
         ...orderedPreDrillFields,
+        'preDrillRemarks',
         ...actualDrillFields,
+        'actualDrillRemarks',
         ...orderedPersonnelFields,
         ...orderedLearnersFields,
         // Insert marker for personnel summary section
@@ -310,8 +312,11 @@ class _AdminTasksManagerPageState extends State<AdminTasksManagerPage> {
         '___pwd_learners_summary___',
         // Insert marker for PWD learners participated summary section
         '___pwd_learners_participated_summary___',
-        ...postDrillFields,
-        ...remainingFields,
+        // --- Place reviewedContingencyPlan at AZ, postDrillRemarks at BA, issuesConcerns at BB ---
+        'postDrill.reviewedContingencyPlan', // AZ
+        'postDrillRemarks',                  // BA
+        'postDrill.issuesConcerns',          // BB
+        'externalLinks',
       ];
 
       // --- Remove unwanted fields from the export ---
@@ -487,6 +492,30 @@ class _AdminTasksManagerPageState extends State<AdminTasksManagerPage> {
           headerRow.add('Male');
           headerRow.add('Female');
           headerRow.add('Total');
+          i++;
+          continue;
+        }
+        // --- Insert merged header for reviewedContingencyPlan at AZ ---
+        if (f == 'postDrill.reviewedContingencyPlan') {
+          prefixRow.add('reviewedContingencyPlan');
+          headerRow.add('');
+          yesNoRow.add('');
+          i++;
+          continue;
+        }
+        // --- Insert merged header for postDrillRemarks at BA ---
+        if (f == 'postDrillRemarks') {
+          prefixRow.add('Post-Drill Remarks');
+          headerRow.add('');
+          yesNoRow.add('');
+          i++;
+          continue;
+        }
+        // --- Insert merged header for issuesConcerns at BB ---
+        if (f == 'postDrill.issuesConcerns') {
+          prefixRow.add('issuesConcerns');
+          headerRow.add('');
+          yesNoRow.add('');
           i++;
           continue;
         }
@@ -698,6 +727,21 @@ class _AdminTasksManagerPageState extends State<AdminTasksManagerPage> {
             row.add(pwdParticipatedFemale == 0 ? '' : pwdParticipatedFemale);
             row.add((pwdParticipatedMale + pwdParticipatedFemale) == 0 ? '' : (pwdParticipatedMale + pwdParticipatedFemale));
             colIdx += 3;
+            continue;
+          }
+          if (f == 'postDrill.reviewedContingencyPlan') {
+            row.add(flat['postDrill.reviewedContingencyPlan'] ?? '');
+            colIdx++;
+            continue;
+          }
+          if (f == 'postDrillRemarks') {
+            row.add(flat['postDrillRemarks'] ?? '');
+            colIdx++;
+            continue;
+          }
+          if (f == 'postDrill.issuesConcerns') {
+            row.add(flat['postDrill.issuesConcerns'] ?? '');
+            colIdx++;
             continue;
           }
           row.add(flat[f] ?? '');
@@ -972,8 +1016,17 @@ for (int col = 4; col <= 16; col++) {
   cell.cellStyle.wrapText = true;            // Optional: enable wrapping
 }
 
-for (int col = 17; col <= 19; col++) {
+for (int col = 18; col <= 21; col++) {
   final cell = sheet.getRangeByIndex(3, col);
+  cell.cellStyle.backColor = '#FFF2CC';     
+  cell.cellStyle.fontColor = '#000000';      // Black text (optional)
+  cell.cellStyle.bold = true;                // Optional: bold text
+  cell.cellStyle.hAlign = xlsio.HAlignType.center;
+  cell.cellStyle.vAlign = xlsio.VAlignType.center;
+  cell.cellStyle.wrapText = true;            // Optional: enable wrapping
+}
+for (int col = 18; col <= 21; col++) {
+  final cell = sheet.getRangeByIndex(2, col);
   cell.cellStyle.backColor = '#FFF2CC';     
   cell.cellStyle.fontColor = '#000000';      // Black text (optional)
   cell.cellStyle.bold = true;                // Optional: bold text
@@ -1116,10 +1169,10 @@ sheet.getRangeByIndex(2, 1).rowHeight = 150;
 
       // --- Merge and set "drill proper" in the first row, columns 17-20 ---
       // Row 1 (1-based), columns 17 to 20 (inclusive)
-      final drillproperrange = sheet.getRangeByIndex(1, 17, 1, 49);
+      final drillproperrange = sheet.getRangeByIndex(1, 18, 1, 51);
 drillproperrange.merge();
-      sheet.getRangeByIndex(1, 17, 1, 49).merge();
-      final drillProperCell = sheet.getRangeByIndex(1, 17);
+      sheet.getRangeByIndex(1, 18, 1, 51).merge();
+      final drillProperCell = sheet.getRangeByIndex(1, 18);
       drillProperCell.setText('ACTUAL DRILL');
       drillProperCell.cellStyle = workbook.styles.add('actualdrillheader')
         ..backColor = '#FFF2CC'
@@ -1133,10 +1186,10 @@ drillproperrange.cellStyle.borders.all.lineStyle = xlsio.LineStyle.thin;
 drillproperrange.cellStyle.borders.all.color = '#000000'; // Optional: Border color
          // --- Merge and set "drill proper" in the first row, columns 17-20 ---
       // Row 1 (1-based), columns 17 to 20 (inclusive)
-      final postdrillrange = sheet.getRangeByIndex(1, 50, 1, 53);
+      final postdrillrange = sheet.getRangeByIndex(1, 52, 1, 53);
 postdrillrange.merge();
-      sheet.getRangeByIndex(1, 50, 1, 53).merge();
-      final postdrillcell = sheet.getRangeByIndex(1, 50);
+      sheet.getRangeByIndex(1, 52, 1, 53).merge();
+      final postdrillcell = sheet.getRangeByIndex(1, 52);
       postdrillcell.setText('POST DRILL');
       postdrillcell.cellStyle = workbook.styles.add('postdrillheader')
         ..backColor = '#a7c957'
@@ -1149,7 +1202,7 @@ postdrillrange.merge();
 postdrillrange.cellStyle.borders.all.lineStyle = xlsio.LineStyle.thin;
 postdrillrange.cellStyle.borders.all.color = '#000000'; // Optional: Border color
 
-      final predrillrange = sheet.getRangeByIndex(1, 4, 1, 16);
+      final predrillrange = sheet.getRangeByIndex(1, 4, 1, 17);
 predrillrange.merge();
 
 // Apply styles to the merged cell
@@ -1212,7 +1265,7 @@ predrillrange.cellStyle.borders.all.color = '#000000'; // Optional: Border color
 excelRows.insert(totalRowIndex, totalRow);
 
 // Write the TOTAL row to the sheet (columns 20 to 49)
-for (int col = 19; col < 49; col++) { // 0-based index: 19 = column 20
+for (int col = 21; col < 51; col++) { // 0-based index: 19 = column 20
   final cell = sheet.getRangeByIndex(totalRowIndex + 1, col + 1);
   cell.setText(totalRow[col].toString());
   cell.cellStyle = workbook.styles.add('totalRow$col')

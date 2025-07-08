@@ -167,7 +167,7 @@ class AdminDashboardPage extends StatelessWidget {
                         for (final sub in submissions) {
                           final data = sub.data() as Map<String, dynamic>;
                           final taskId = data['taskId'] as String?;
-                          final schoolId = data['schoolId'] as String?;
+                          final schoolId = data['schooluid'] as String?; // <-- fix: use 'schooluid'
                           if (taskId != null && schoolId != null) {
                             taskToSubmitted.putIfAbsent(taskId, () => {}).add(schoolId);
                           }
@@ -258,5 +258,10 @@ class AdminDashboardPage extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  // Helper function to count submissions for a specific taskId
+  int countSubmissionsForTask(List<QueryDocumentSnapshot> submissions, String taskId) {
+    return submissions.where((s) => s['taskId'] == taskId).length;
   }
 }
