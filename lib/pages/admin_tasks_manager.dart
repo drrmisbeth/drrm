@@ -497,8 +497,8 @@ class _AdminTasksManagerPageState extends State<AdminTasksManagerPage> {
         }
         // --- Insert merged header for reviewedContingencyPlan at AZ ---
         if (f == 'postDrill.reviewedContingencyPlan') {
-          prefixRow.add('reviewedContingencyPlan');
-          headerRow.add('');
+          prefixRow.add('Conduct of post-activity exercises');
+          headerRow.add('Yes/No');
           yesNoRow.add('');
           i++;
           continue;
@@ -513,7 +513,15 @@ class _AdminTasksManagerPageState extends State<AdminTasksManagerPage> {
         }
         // --- Insert merged header for issuesConcerns at BB ---
         if (f == 'postDrill.issuesConcerns') {
-          prefixRow.add('issuesConcerns');
+          prefixRow.add('Common issues and concerns encountered during the actual conduct of drill');
+          headerRow.add('');
+          yesNoRow.add('');
+          i++;
+          continue;
+        }
+        // --- Insert merged header for externalLinks ---
+        if (f == 'externalLinks') {
+          prefixRow.add('LINK FOR DOCUMENTATION\n(documentation)\n\nGoogle Drive Link');
           headerRow.add('');
           yesNoRow.add('');
           i++;
@@ -1035,6 +1043,16 @@ for (int col = 18; col <= 21; col++) {
   cell.cellStyle.wrapText = true;            // Optional: enable wrapping
 }
 
+for (int col = 4; col <= 17; col++) {
+  final cell = sheet.getRangeByIndex(3, col);
+  cell.cellStyle.backColor = '#f4cccc';     
+  cell.cellStyle.fontColor = '#000000';      // Black text (optional)
+  cell.cellStyle.bold = true;                // Optional: bold text
+  cell.cellStyle.hAlign = xlsio.HAlignType.center;
+  cell.cellStyle.vAlign = xlsio.VAlignType.center;
+  cell.cellStyle.wrapText = true;            // Optional: enable wrapping
+}
+
 for (int col = 26; col <= 49; col++) {
   final cell = sheet.getRangeByIndex(2, col);
   cell.cellStyle.backColor = '#FFF2CC';     
@@ -1045,6 +1063,51 @@ for (int col = 26; col <= 49; col++) {
   cell.cellStyle.backColor = '#FFF2CC';     
   cell.cellStyle.fontColor = '#000000';      // Black text (optional)        // Optional: enable wrapping
 }
+
+for (int col = 52; col <= 53; col++) {
+  final cell = sheet.getRangeByIndex(2, col);
+  cell.cellStyle.backColor = '#acd8a7';     
+  cell.cellStyle.fontColor = '#000000';      // Black text (optional)        // Optional: enable wrapping
+}
+for (int col = 52; col <= 53; col++) {
+  final cell = sheet.getRangeByIndex(3, col);
+  cell.cellStyle.backColor = '#acd8a7';     
+  cell.cellStyle.fontColor = '#000000';      // Black text (optional)        // Optional: enable wrapping
+}
+for (int col = 55; col <= 55; col++) {
+  final cell = sheet.getRangeByIndex(1, col);
+  cell.cellStyle.backColor = '#0077b6';     
+  cell.cellStyle.fontColor = '#ffffff';      // Black text (optional)        // Optional: enable wrapping
+}
+for (int col = 55; col <= 55; col++) {
+  final cell = sheet.getRangeByIndex(2, col);
+  cell.cellStyle.backColor = '#0077b6';     
+  cell.cellStyle.fontColor = '#ffffff';      // Black text (optional)        // Optional: enable wrapping
+}
+
+for (int col = 55; col <= 55; col++) {
+  final cell = sheet.getRangeByIndex(3, col);
+  cell.cellStyle.backColor = '#0077b6';     
+  cell.cellStyle.fontColor = '#ffffff';      // Black text (optional)        // Optional: enable wrapping
+}
+for (int col = 54; col <= 54; col++) {
+  final cell = sheet.getRangeByIndex(1, col);
+  cell.cellStyle.backColor = '#FDA172';     
+  cell.cellStyle.fontColor = '#000000';      // Black text (optional)        // Optional: enable wrapping
+}
+for (int col = 54; col <= 54; col++) {
+  final cell = sheet.getRangeByIndex(2, col);
+  cell.cellStyle.backColor = '#FDA172';     
+  cell.cellStyle.fontColor = '#000000';      // Black text (optional)        // Optional: enable wrapping
+}
+
+for (int col = 54; col <= 54; col++) {
+  final cell = sheet.getRangeByIndex(3, col);
+  cell.cellStyle.backColor = '#FDA172';     
+  cell.cellStyle.fontColor = '#000000';      // Black text (optional)        // Optional: enable wrapping
+}
+
+
 // Loop through the desired rows and columns (e.g. rows 1–100, columns 1–20)
 for (int row = 1; row <= 70; row++) {
   for (int col = 1; col <= 65; col++) {
@@ -1192,7 +1255,7 @@ postdrillrange.merge();
       final postdrillcell = sheet.getRangeByIndex(1, 52);
       postdrillcell.setText('POST DRILL');
       postdrillcell.cellStyle = workbook.styles.add('postdrillheader')
-        ..backColor = '#a7c957'
+        ..backColor = '#acd8a7'
         ..fontColor = '#000000'
         ..bold = true
         ..hAlign = xlsio.HAlignType.center
@@ -1219,6 +1282,7 @@ predrillcell.cellStyle = workbook.styles.add('predrillheader')
 // Add border to the entire merged range
 predrillrange.cellStyle.borders.all.lineStyle = xlsio.LineStyle.thin;
 predrillrange.cellStyle.borders.all.color = '#000000'; // Optional: Border color
+
 
       // --- Write data rows with plain white background ---
       for (int row = 4; row < excelRows.length; row++) {
