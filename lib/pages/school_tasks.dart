@@ -1138,7 +1138,7 @@ class _SchoolSubmitFormPageState extends State<SchoolSubmitFormPage> {
                         TextField(
                           controller: linksController,
                           decoration: InputDecoration(
-                            labelText: 'Paste links here (separate by comma or newline)',
+                            labelText: 'Paste links here (PROVIDE FULL LINK INCLUDING "https://")',
                             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                             prefixIcon: const Icon(Icons.link),
                             filled: true,

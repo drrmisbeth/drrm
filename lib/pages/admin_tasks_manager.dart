@@ -752,6 +752,16 @@ class _AdminTasksManagerPageState extends State<AdminTasksManagerPage> {
             colIdx++;
             continue;
           }
+          if (f == 'externalLinks') {
+            final link = flat['externalLinks']?.toString() ?? '';
+            if (link.isNotEmpty) {
+              row.add('=HYPERLINK("$link")');
+            } else {
+              row.add('');
+            }
+            colIdx++;
+            continue;
+          }
           row.add(flat[f] ?? '');
           colIdx++;
         }
