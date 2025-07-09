@@ -23,12 +23,16 @@ class _AdminTaskSubmissionsPageState extends State<AdminTaskSubmissionsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final isMobile = MediaQuery.of(context).size.width < 700;
+    final Color primary = Colors.black;
+    final Color accent = Colors.grey[700]!;
+    final Color cardBg = Colors.grey[850]!;
+    final Color textColor = Colors.white;
+    final Color hintColor = Colors.grey[400]!;
+    final bool isMobile = MediaQuery.of(context).size.width < 700;
     return Scaffold(
       appBar: AppBar(
-        title: Text('Submissions for ${widget.taskTitle}'),
-        backgroundColor: colorScheme.primary,
+        title: Text('Submissions for ${widget.taskTitle}'),
+        backgroundColor: primary,
         foregroundColor: Colors.white,
       ),
       body: Padding(
@@ -93,13 +97,13 @@ class _AdminTaskSubmissionsPageState extends State<AdminTaskSubmissionsPage> {
                 ),
                 Container(
                   decoration: BoxDecoration(
-                    color: colorScheme.primary.withOpacity(0.12),
+                    color: primary.withOpacity(0.12),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: IconButton(
                     icon: Icon(
                       _sortAsc ? Icons.arrow_upward : Icons.arrow_downward,
-                      color: colorScheme.primary,
+                      color: primary,
                     ),
                     tooltip: 'Toggle sort order',
                     onPressed: () => setState(() => _sortAsc = !_sortAsc),
@@ -223,12 +227,12 @@ class _AdminTaskSubmissionsPageState extends State<AdminTaskSubmissionsPage> {
                                           Chip(
                                             label: Text(row['status']),
                                             backgroundColor: row['status'] == 'Submitted'
-                                                ? colorScheme.primary.withOpacity(0.18)
-                                                : colorScheme.secondary.withOpacity(0.18),
+                                                ? primary.withOpacity(0.18)
+                                                : accent.withOpacity(0.18),
                                             labelStyle: TextStyle(
                                               color: row['status'] == 'Submitted'
-                                                  ? colorScheme.primary
-                                                  : colorScheme.secondary,
+                                                  ? primary
+                                                  : accent,
                                               fontWeight: FontWeight.w600,
                                             ),
                                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
@@ -324,7 +328,11 @@ class AdminSubmissionDetailPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final Color primary = Colors.black;
+    final Color accent = Colors.grey[700]!;
+    final Color cardBg = Colors.grey[850]!;
+    final Color textColor = Colors.white;
+    final Color hintColor = Colors.grey[400]!;
     final isMobile = MediaQuery.of(context).size.width < 700;
     final data = submission.data() as Map<String, dynamic>;
     final submittedAt = data['submittedAt'] != null
@@ -364,7 +372,7 @@ class AdminSubmissionDetailPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text('Submission Detail'),
-        backgroundColor: colorScheme.primary,
+        backgroundColor: primary,
         foregroundColor: Colors.white,
       ),
       body: Padding(
@@ -373,7 +381,7 @@ class AdminSubmissionDetailPage extends StatelessWidget {
           children: [
             Text(
               taskTitle,
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: isMobile ? 16 : 22, color: colorScheme.primary),
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: isMobile ? 16 : 22, color: primary),
             ),
             SizedBox(height: isMobile ? 4 : 8),
             Text(

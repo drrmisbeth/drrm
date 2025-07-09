@@ -8,8 +8,14 @@ class SchoolHomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final isMobile = MediaQuery.of(context).size.width < 700;
+    // Black, grey, white palette
+    final Color primary = Colors.black;
+    final Color secondary = Colors.grey[900]!;
+    final Color cardBg = Colors.grey[850]!;
+    final Color accent = Colors.grey[700]!;
+    final Color textColor = Colors.white;
+    final Color hintColor = Colors.grey[400]!;
+    final bool isMobile = MediaQuery.of(context).size.width < 700;
     return SingleChildScrollView(
       child: Padding(
         padding: EdgeInsets.all(isMobile ? 10 : 32),
@@ -21,12 +27,12 @@ class SchoolHomePage extends StatelessWidget {
               width: double.infinity,
               padding: EdgeInsets.symmetric(vertical: isMobile ? 18 : 32, horizontal: isMobile ? 14 : 32),
               decoration: BoxDecoration(
-                color: colorScheme.primary.withOpacity(0.13),
+                color: primary.withOpacity(0.13),
                 borderRadius: BorderRadius.circular(18),
               ),
               child: Row(
                 children: [
-                  Icon(Icons.school, color: colorScheme.primary, size: isMobile ? 32 : 48),
+                  Icon(Icons.school, color: primary, size: isMobile ? 32 : 48),
                   SizedBox(width: isMobile ? 10 : 24),
                   Expanded(
                     child: Column(
@@ -37,13 +43,13 @@ class SchoolHomePage extends StatelessWidget {
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: isMobile ? 18 : 28,
-                            color: colorScheme.primary,
+                            color: primary,
                           ),
                         ),
                         SizedBox(height: 4),
                         Text(
                           'Your dashboard for disaster risk reduction and management in schools.',
-                          style: TextStyle(fontSize: isMobile ? 13 : 16, color: Colors.black87),
+                          style: TextStyle(fontSize: isMobile ? 13 : 16, color: Colors.grey[300]),
                         ),
                       ],
                     ),
@@ -65,7 +71,7 @@ class SchoolHomePage extends StatelessWidget {
                     icon: Icons.assignment_turned_in,
                     label: 'Submission Tasks',
                     value: 'View and submit required drills',
-                    color: colorScheme.primary,
+                    color: primary,
                     context: context,
                   ),
                 ),
@@ -77,7 +83,7 @@ class SchoolHomePage extends StatelessWidget {
                     icon: Icons.campaign_rounded,
                     label: 'Announcements',
                     value: 'See latest updates',
-                    color: colorScheme.secondary,
+                    color: accent,
                     context: context,
                   ),
                 ),
@@ -99,7 +105,7 @@ class SchoolHomePage extends StatelessWidget {
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: isMobile ? 15 : 20,
-                        color: colorScheme.primary,
+                        color: primary,
                       ),
                     ),
                     SizedBox(height: 8),
@@ -108,7 +114,7 @@ class SchoolHomePage extends StatelessWidget {
                       '• Submit your drill reports before the deadline.\n'
                       '• Review announcements for important updates.\n'
                       '• Track your previous submissions in "My Submissions".',
-                      style: TextStyle(fontSize: isMobile ? 13 : 16),
+                      style: TextStyle(fontSize: isMobile ? 13 : 16, color: Colors.grey[700]),
                     ),
                   ],
                 ),
@@ -150,7 +156,7 @@ class SchoolHomePage extends StatelessWidget {
                   children: [
                     Text(label, style: TextStyle(fontWeight: FontWeight.bold, fontSize: isMobile ? 14 : 16, color: color)),
                     SizedBox(height: 2),
-                    Text(value, style: TextStyle(fontSize: isMobile ? 11 : 13, color: Colors.black87)),
+                    Text(value, style: TextStyle(fontSize: isMobile ? 11 : 13, color: Colors.grey[700])),
                   ],
                 ),
               ),

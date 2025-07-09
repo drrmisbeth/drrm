@@ -10,7 +10,7 @@ class SchoolAnnouncementsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     return Container(
-      color: Colors.white,
+      color: Colors.white, // Use only white background
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
         child: Column(
@@ -35,7 +35,7 @@ class SchoolAnnouncementsPage extends StatelessWidget {
                     .snapshots(),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
+                    return const Center(child: CircularProgressIndicator(color: Colors.black));
                   }
                   if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
                     return Card(
@@ -67,13 +67,13 @@ class SchoolAnnouncementsPage extends StatelessWidget {
                       Color tagColor(String tag) {
                         switch (tag.toLowerCase()) {
                           case 'event':
-                            return Colors.black87;
+                            return Colors.black;
                           case 'medium':
                             return Colors.grey[700]!;
                           case 'important':
-                            return Colors.red[200]!;
+                            return Colors.grey[900]!;
                           default:
-                            return Colors.blueGrey;
+                            return Colors.grey[700]!;
                         }
                       }
                       Color tagBgColor(String tag) {
@@ -83,7 +83,7 @@ class SchoolAnnouncementsPage extends StatelessWidget {
                           case 'medium':
                             return Colors.grey[100]!;
                           case 'important':
-                            return Colors.red[100]!;
+                            return Colors.grey[300]!;
                           default:
                             return Colors.grey[100]!;
                         }
@@ -108,132 +108,132 @@ class SchoolAnnouncementsPage extends StatelessWidget {
                         showModalBottomSheet(
                           context: context,
                           isScrollControlled: true,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-                          ),
+                          backgroundColor: Colors.transparent,
                           builder: (ctx) {
-                            return Padding(
-                              padding: EdgeInsets.only(
-                                left: 24, right: 24,
-                                top: 24,
-                                bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
+                            return Container(
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.08),
+                                    blurRadius: 24,
+                                    offset: Offset(0, -4),
+                                  ),
+                                ],
                               ),
-                              child: SingleChildScrollView(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    // Subject
-                                    Text(subject, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22)),
-                                    SizedBox(height: 8),
-                                    // Sender, Date
-                                    Row(
-                                      children: [
-                                        CircleAvatar(
-                                          backgroundColor: Colors.yellow[600],
-                                          child: Icon(Icons.campaign, color: Colors.white, size: 24),
-                                          radius: 18,
+                              child: Padding(
+                                padding: EdgeInsets.only(
+                                  left: 24, right: 24,
+                                  top: 28,
+                                  bottom: MediaQuery.of(ctx).viewInsets.bottom + 28,
+                                ),
+                                child: SingleChildScrollView(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          CircleAvatar(
+                                            backgroundColor: Colors.black,
+                                            child: Icon(Icons.campaign, color: Colors.white, size: 28),
+                                            radius: 24,
+                                          ),
+                                          SizedBox(width: 14),
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Text(subject, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22, color: Colors.black)),
+                                                SizedBox(height: 2),
+                                                Text('From: $sender', style: TextStyle(fontSize: 14, color: Colors.grey[700])),
+                                                if (createdAt != null)
+                                                  Text(
+                                                    '${createdAt.month.toString().padLeft(2, '0')}/${createdAt.day.toString().padLeft(2, '0')}/${createdAt.year}',
+                                                    style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                                                  ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      SizedBox(height: 18),
+                                      if (tags.isNotEmpty)
+                                        Wrap(
+                                          spacing: 8,
+                                          runSpacing: 4,
+                                          children: tags.map((tag) {
+                                            return Chip(
+                                              label: Text(tag, style: TextStyle(fontWeight: tag.toLowerCase() == 'important' ? FontWeight.bold : FontWeight.normal)),
+                                              backgroundColor: tagBgColor(tag),
+                                              labelStyle: TextStyle(color: tagColor(tag)),
+                                              padding: EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+                                            );
+                                          }).toList(),
                                         ),
-                                        SizedBox(width: 10),
-                                        Expanded(
+                                      SizedBox(height: 16),
+                                      if (body.isNotEmpty)
+                                        Container(
+                                          width: double.infinity,
+                                          padding: EdgeInsets.all(16),
+                                          decoration: BoxDecoration(
+                                            color: Colors.grey[100],
+                                            borderRadius: BorderRadius.circular(12),
+                                          ),
+                                          child: Text(body, style: TextStyle(fontSize: 15, color: Colors.black87)),
+                                        ),
+                                      if (extraFields.isNotEmpty) ...[
+                                        SizedBox(height: 16),
+                                        ...extraFields.entries.map((e) => Padding(
+                                          padding: const EdgeInsets.only(bottom: 4),
+                                          child: Text('${e.key}: ${e.value}', style: TextStyle(fontSize: 13, color: Colors.grey[700])),
+                                        )),
+                                      ],
+                                      if (attachmentUrls.isNotEmpty)
+                                        Padding(
+                                          padding: const EdgeInsets.only(top: 18),
                                           child: Column(
                                             crossAxisAlignment: CrossAxisAlignment.start,
                                             children: [
-                                              Text('From: $sender', style: TextStyle(fontSize: 14, color: Colors.grey[800])),
-                                              if (cc.toString().isNotEmpty)
-                                                Text('Cc: $cc', style: TextStyle(fontSize: 13, color: Colors.grey[600])),
-                                              if (bcc.toString().isNotEmpty)
-                                                Text('Bcc: $bcc', style: TextStyle(fontSize: 13, color: Colors.grey[600])),
+                                              Text('Attachments:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                                              ...List.generate(attachmentUrls.length, (idx) {
+                                                final url = attachmentUrls[idx]?.toString() ?? '';
+                                                final name = (idx < attachmentNames.length)
+                                                    ? (attachmentNames[idx]?.toString() ?? 'Attachment')
+                                                    : 'Attachment';
+                                                if (url.isEmpty) return const SizedBox.shrink();
+                                                return Padding(
+                                                  padding: const EdgeInsets.only(bottom: 4),
+                                                  child: InkWell(
+                                                    onTap: () async {
+                                                      if (await canLaunchUrl(Uri.parse(url))) {
+                                                        await launchUrl(Uri.parse(url));
+                                                      }
+                                                    },
+                                                    child: Row(
+                                                      children: [
+                                                        const Icon(Icons.attach_file, size: 16, color: Colors.black),
+                                                        Flexible(
+                                                          child: Text(
+                                                            name,
+                                                            style: const TextStyle(
+                                                              color: Colors.black,
+                                                              decoration: TextDecoration.underline,
+                                                              fontSize: 14,
+                                                            ),
+                                                            overflow: TextOverflow.ellipsis,
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                );
+                                              }),
                                             ],
                                           ),
                                         ),
-                                        if (createdAt != null)
-                                          Text(
-                                            '${createdAt.month.toString().padLeft(2, '0')}/${createdAt.day.toString().padLeft(2, '0')}/${createdAt.year}',
-                                            style: TextStyle(color: Colors.grey[600], fontSize: 13),
-                                          ),
-                                      ],
-                                    ),
-                                    SizedBox(height: 12),
-                                    // Tags
-                                    if (tags.isNotEmpty)
-                                      Row(
-                                        children: tags.map((tag) {
-                                          return Container(
-                                            margin: const EdgeInsets.only(right: 8),
-                                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                                            decoration: BoxDecoration(
-                                              color: tagBgColor(tag),
-                                              borderRadius: BorderRadius.circular(8),
-                                            ),
-                                            child: Text(
-                                              tag,
-                                              style: TextStyle(
-                                                color: tagColor(tag),
-                                                fontWeight: tag.toLowerCase() == 'important'
-                                                    ? FontWeight.bold
-                                                    : FontWeight.normal,
-                                              ),
-                                            ),
-                                          );
-                                        }).toList(),
-                                      ),
-                                    SizedBox(height: 14),
-                                    // Body
-                                    if (body.isNotEmpty)
-                                      Text(body, style: TextStyle(fontSize: 15, color: Colors.black87)),
-                                    // Extra fields
-                                    if (extraFields.isNotEmpty) ...[
-                                      SizedBox(height: 16),
-                                      ...extraFields.entries.map((e) => Padding(
-                                        padding: const EdgeInsets.only(bottom: 4),
-                                        child: Text('${e.key}: ${e.value}', style: TextStyle(fontSize: 13, color: Colors.grey[700])),
-                                      )),
                                     ],
-                                    // Attachments
-                                    if (attachmentUrls.isNotEmpty)
-                                      Padding(
-                                        padding: const EdgeInsets.only(top: 16),
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Text('Attachments:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                                            ...List.generate(attachmentUrls.length, (idx) {
-                                              final url = attachmentUrls[idx]?.toString() ?? '';
-                                              final name = (idx < attachmentNames.length)
-                                                  ? (attachmentNames[idx]?.toString() ?? 'Attachment')
-                                                  : 'Attachment';
-                                              if (url.isEmpty) return const SizedBox.shrink();
-                                              return Padding(
-                                                padding: const EdgeInsets.only(bottom: 4),
-                                                child: InkWell(
-                                                  onTap: () async {
-                                                    if (await canLaunchUrl(Uri.parse(url))) {
-                                                      await launchUrl(Uri.parse(url));
-                                                    }
-                                                  },
-                                                  child: Row(
-                                                    children: [
-                                                      const Icon(Icons.attach_file, size: 16, color: Colors.blue),
-                                                      Flexible(
-                                                        child: Text(
-                                                          name,
-                                                          style: const TextStyle(
-                                                            color: Colors.blue,
-                                                            decoration: TextDecoration.underline,
-                                                            fontSize: 14,
-                                                          ),
-                                                          overflow: TextOverflow.ellipsis,
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ),
-                                              );
-                                            }),
-                                          ],
-                                        ),
-                                      ),
-                                  ],
+                                  ),
                                 ),
                               ),
                             );

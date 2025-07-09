@@ -2011,9 +2011,25 @@ for (int col = 21; col < 51; col++) { // 0-based index: 19 = column 20
                                         onPressed: () => _viewSubmissions(doc.id, '${task['type']} (${task['frequency']})'),
                                       ),
                                       // --- Export Button with export logic ---
-                                      TextButton(
-                                        child: const Text('Export', style: TextStyle(color: Colors.black)),
-                                        onPressed: () => _exportSubmissions(doc.id, '${task['type']} (${task['frequency']})'),
+                                      FutureBuilder<int>(
+                                        future: FirebaseFirestore.instance
+                                            .collection('submissions')
+                                            .where('taskId', isEqualTo: doc.id)
+                                            .limit(1)
+                                            .get()
+                                            .then((snap) => snap.size),
+                                        builder: (context, snapshot) {
+                                          final hasSubmissions = snapshot.hasData && snapshot.data! > 0;
+                                          return TextButton(
+                                            child: const Text('Export', style: TextStyle(color: Colors.black)),
+                                            onPressed: hasSubmissions
+                                                ? () => _exportSubmissions(doc.id, '${task['type']} (${task['frequency']})')
+                                                : null,
+                                            style: TextButton.styleFrom(
+                                              foregroundColor: hasSubmissions ? Colors.black : Colors.grey,
+                                            ),
+                                          );
+                                        },
                                       ),
                                       // --- Archive Button ---
                                       if (!(task['archived'] ?? false))
